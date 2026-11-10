@@ -1,0 +1,18 @@
+# Never upload local secrets, databases or build output
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.db
+*.db.*
+*.db-*
+cms/media
+cms/.migration
+cms/.next
+dist
+.astro
+.shipstudio
+**/node_modules
+**/*.tsbuildinfo

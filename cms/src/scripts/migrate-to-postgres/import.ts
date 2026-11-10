@@ -5,11 +5,12 @@
  */
 import fs from 'fs'
 import path from 'path'
-import { getPayload } from 'payload'
+import { getPayload, type CollectionSlug, type GlobalSlug } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
 import config from '@payload-config'
 
 type Doc = Record<string, any> & { id: number }
+type Item = { slug: CollectionSlug; doc: Doc }
 const data = JSON.parse(fs.readFileSync(path.resolve('.migration/data.json'), 'utf8')) as {
   collections: Record<string, Doc[]>
   globals: Record<string, Doc>
@@ -18,13 +19,13 @@ const data = JSON.parse(fs.readFileSync(path.resolve('.migration/data.json'), 'u
 const payload = await getPayload({ config })
 
 // Media first (everything else points at it), users next, the rest after.
-const order = ['media', 'users', ...Object.keys(data.collections).filter((s) => s !== 'media' && s !== 'users')]
+const order: CollectionSlug[] = ['media', 'users', ...(Object.keys(data.collections) as CollectionSlug[]).filter((s) => s !== 'media' && s !== 'users')]
 const strip = ({ createdAt, updatedAt, ...rest }: Doc) => ({ ...rest, createdAt, updatedAt })
 
-let pending: { slug: string; doc: Doc }[] = []
+let pending: Item[] = []
 for (const slug of order) for (const doc of data.collections[slug] ?? []) pending.push({ slug, doc })
 
-const insert = async ({ slug, doc }: { slug: string; doc: Doc }) => {
+const insert = async ({ slug, doc }: Item) => {
   const exists = await payload.db.findOne({ collection: slug, where: { id: { equals: doc.id } } })
   if (exists) return
   if (slug === 'media') {
@@ -54,7 +55,7 @@ for (let pass = 1; pending.length && pass <= 5; pass++) {
 
 for (const [slug, doc] of Object.entries(data.globals)) {
   const { id, globalType, createdAt, updatedAt, ...fields } = doc
-  await payload.updateGlobal({ slug, data: fields, overrideAccess: true, context: { skipRebuild: true } })
+  await payload.updateGlobal({ slug: slug as GlobalSlug, data: fields, overrideAccess: true, context: { skipRebuild: true } })
   console.log(`global ${slug}`)
 }
 
