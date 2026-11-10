@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # ShipStudio metadata
 .shipstudio/
+.vercel
+.env*

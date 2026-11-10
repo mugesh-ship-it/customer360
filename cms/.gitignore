@@ -56,3 +56,5 @@ node_modules/
 # Postgres migration export
 /.migration
 *.db.bak*
+.env*
+.env.vercel

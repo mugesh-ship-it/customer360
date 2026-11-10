@@ -61,6 +61,8 @@ export default buildConfig({
         pool: { connectionString: databaseURL },
         migrationDir: path.resolve(dirname, 'migrations'),
         allowIDOnCreate: true,
+        // Schema changes ship as migrations (npm run ci runs them on deploy).
+        push: false,
       })
     : sqliteAdapter({ client: { url: databaseURL } }),
   sharp,
