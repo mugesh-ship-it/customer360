@@ -1,0 +1,71 @@
+---
+/**
+ * Maps each CMS block (by blockType) to its section component.
+ * To add a section: create the Payload block, add a component here.
+ */
+import type { PageBlock } from '../lib/cms';
+import Hero from './sections/Hero.astro';
+import LogoMarquee from './sections/LogoMarquee.astro';
+import Statement from './sections/Statement.astro';
+import ServicesWheel from './sections/ServicesWheel.astro';
+import Stats from './sections/Stats.astro';
+import AboutBanner from './sections/AboutBanner.astro';
+import Features from './sections/Features.astro';
+import Testimonials from './sections/Testimonials.astro';
+import GlobalReach from './sections/GlobalReach.astro';
+import Cta from './sections/Cta.astro';
+import CardGrid from './sections/CardGrid.astro';
+import Values from './sections/Values.astro';
+import Approach from './sections/Approach.astro';
+import Team from './sections/Team.astro';
+import ServiceGrid from './sections/ServiceGrid.astro';
+import CaseStudies from './sections/CaseStudies.astro';
+import SplitIntro from './sections/SplitIntro.astro';
+import IconCards from './sections/IconCards.astro';
+import IconList from './sections/IconList.astro';
+import Divider from './sections/Divider.astro';
+import ProductGrid from './sections/ProductGrid.astro';
+import FeaturedTestimonial from './sections/FeaturedTestimonial.astro';
+import Benefits from './sections/Benefits.astro';
+import CaseStudyList from './sections/CaseStudyList.astro';
+
+interface Props {
+  blocks: PageBlock[] | null | undefined;
+}
+
+const components: Partial<Record<PageBlock['blockType'], any>> = {
+  hero: Hero,
+  logoMarquee: LogoMarquee,
+  statement: Statement,
+  servicesWheel: ServicesWheel,
+  stats: Stats,
+  aboutBanner: AboutBanner,
+  features: Features,
+  testimonials: Testimonials,
+  globalReach: GlobalReach,
+  cta: Cta,
+  cardGrid: CardGrid,
+  values: Values,
+  approach: Approach,
+  team: Team,
+  serviceGrid: ServiceGrid,
+  caseStudies: CaseStudies,
+  splitIntro: SplitIntro,
+  iconCards: IconCards,
+  iconList: IconList,
+  divider: Divider,
+  productGrid: ProductGrid,
+  featuredTestimonial: FeaturedTestimonial,
+  benefits: Benefits,
+  caseStudyList: CaseStudyList,
+};
+
+const { blocks } = Astro.props;
+---
+
+{
+  blocks?.map((block) => {
+    const Component = components[block.blockType];
+    return Component ? <Component block={block} /> : null;
+  })
+}

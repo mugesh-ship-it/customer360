@@ -1,0 +1,18 @@
+---
+/** Any other CMS page, e.g. slug "about" → /about. */
+import Layout from '../layouts/Layout.astro';
+import RenderBlocks from '../components/RenderBlocks.astro';
+import { getAllPageSlugs, getPageBySlug } from '../lib/cms';
+
+export async function getStaticPaths() {
+  const slugs = await getAllPageSlugs();
+  return slugs.filter((s) => s !== 'home').map((slug) => ({ params: { slug } }));
+}
+
+const page = await getPageBySlug(Astro.params.slug!);
+if (!page) return Astro.redirect('/404');
+---
+
+<Layout page={page}>
+  <RenderBlocks blocks={page.layout} />
+</Layout>

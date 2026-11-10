@@ -1,0 +1,131 @@
+---
+import Button from '../global/Button.astro';
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'hero'>;
+}
+const { block } = Astro.props;
+// Split the title around the CMS "Words to highlight" so only that phrase gets the animated gradient.
+const heading = block.heading ?? '';
+const hl = block.highlight?.trim();
+const at = hl ? heading.indexOf(hl) : -1;
+const framed = block.visualStyle === 'framed';
+const parts = at >= 0 ? [heading.slice(0, at), heading.slice(at, at + hl!.length), heading.slice(at + hl!.length)] : null;
+---
+
+{
+  block.visualStyle === 'banner' ? (
+    /* Centred title over a full-width banner image (e.g. service pages). */
+    <section class="section_hero is-banner relative isolate" id={block.anchorId || undefined}>
+      <div class="hero_glow is-left" aria-hidden="true" />
+      <div class="hero_glow is-right" aria-hidden="true" />
+      <div class="padding-global">
+        <div class="container-large">
+          <div class="hero_component relative z-10 flex flex-col items-center pt-12 text-center lg:pt-[6.1rem]">
+            {block.tag && <SectionTag text={block.tag} class="hero_tag mb-3 px-4 lg:mb-1.5" data-reveal />}
+            <h1 class="hero_heading heading-style-h1 text-gradient-fade max-w-[68.5rem] lg:leading-[1.25]" data-reveal>
+              {heading}
+            </h1>
+            {
+              block.description && (
+                <p class="hero_description text-size-large mt-6 max-w-[38.5rem] text-muted" data-reveal style="--reveal-delay: 100">
+                  {block.description}
+                </p>
+              )
+            }
+          </div>
+        </div>
+      </div>
+      <div class="hero_banner relative mt-2 h-[clamp(12rem,28.5vw,25.6rem)] lg:-mt-[6.6rem]" data-reveal style="--reveal-delay: 150">
+        <CmsImage media={block.decorImage} class="hero_banner-image size-full object-cover" loading="eager" fetchpriority="high" sizes="100vw" />
+      </div>
+      <div class="hero_buttons relative z-10 -mt-[1.625rem] flex justify-center pb-12 lg:pb-[3.75rem]" data-reveal style="--reveal-delay: 250">
+        <Button link={block.button} variant="icon" />
+      </div>
+    </section>
+  ) : (
+<section class="section_hero relative" id={block.anchorId || undefined}>
+  <div class="hero_grid pointer-events-none absolute inset-0 max-lg:hidden" aria-hidden="true">
+    <div class="grid-line-v absolute top-[16%] left-[calc(50%-2.25px)] h-[30%]"></div>
+    <div class="grid-line-v absolute top-[60%] left-[calc(50%-2.25px)] h-[40%]"></div>
+    <div class="absolute top-[52%] left-[calc(50%-12.5rem)] flex w-[25rem] items-center">
+      <div class="grid-line-h flex-1"></div>
+      <div class="grid-dot"></div>
+      <div class="grid-line-h is-reverse flex-1"></div>
+    </div>
+  </div>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class:list={['hero_component relative grid items-center gap-12 pt-16 pb-12 lg:grid-cols-[1fr_auto] lg:pt-[7.5rem] lg:pb-[3.78rem]', framed && 'lg:gap-0']}>
+        <div class:list={['hero_content relative z-10', framed ? 'max-w-[44.1rem]' : 'max-w-[43rem]']}>
+          {block.tag && <SectionTag text={block.tag} class="hero_tag mb-7 px-4" data-reveal />}
+          <h1 class="hero_heading heading-style-h1 text-neutral-800" data-reveal>
+            {parts ? (<>{parts[0]}<span class="text-gradient-animated">{parts[1]}</span>{parts[2]}</>) : heading}
+          </h1>
+          {
+            block.description && (
+              <p class="hero_description text-size-large mt-6 max-w-[38.5rem] text-muted lg:mt-9" data-reveal style="--reveal-delay: 100">
+                {block.description}
+              </p>
+            )
+          }
+          <div class="hero_buttons mt-8 lg:mt-10" data-reveal style="--reveal-delay: 200">
+            <Button link={block.button} variant="icon" />
+          </div>
+        </div>
+        {
+          block.visualStyle === 'framed' ? (
+            <div class="hero_photo relative mx-auto aspect-[590/669] lg:-ml-4 w-full max-w-[26rem] lg:w-[clamp(24rem,41vw,36.9rem)] lg:max-w-none" data-reveal style="--reveal-delay: 150">
+              {/* Brand shapes (Figma "Union"), mirrored: block top-right + block bottom-left. */}
+              <svg class="hero_photo-shapes absolute inset-x-0 bottom-0 h-[86.5%] w-full -scale-x-100 text-primary-500" viewBox="0 0 589.816 578.388" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="currentColor" d="M294.408 248.388c0 22.091 17.909 40 40 40h215.408c22.092 0 40 17.908 40 40v210c0 22.091-17.908 40-40 40H277.09c-22.092 0-40-17.909-40-40V330c0-22.091-17.909-40-40-40H40c-22.091 0-40-17.909-40-40V40C0 17.909 17.909 0 40 0h214.408c22.092 0 40 17.909 40 40v208.388Z" />
+              </svg>
+              <span class="hero_photo-card absolute top-[59.74%] left-[62.95%] h-[40.26%] w-[37.05%] rounded-[1.95rem] bg-primary-200" aria-hidden="true"></span>
+              <CmsImage media={block.decorImage} class="hero_photo-image relative h-full w-[98.2%] object-contain object-bottom" loading="eager" fetchpriority="high" sizes="(min-width: 64rem) 590px, 26rem" />
+              {/* Page-coloured ring over the photo's corner — makes the card read as "in front". */}
+              <span class="hero_photo-ring pointer-events-none absolute top-[59.74%] left-[62.95%] h-[40.26%] w-[37.05%] rounded-[1.95rem] border-[1.2rem] border-(--page-bg)" aria-hidden="true"></span>
+            </div>
+          ) : (
+            <div class="hero_visual relative max-lg:hidden" data-reveal style="--reveal-delay: 150">
+              <CmsImage media={block.decorImage} class="hero_decor h-auto w-[clamp(22rem,39vw,35.4rem)]" loading="eager" decorative />
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+  )
+}
+
+<style>
+  /* Soft brand glows behind the banner hero (Figma blurred ellipses), as cheap radial gradients. */
+  .hero_glow {
+    position: absolute;
+    z-index: -1;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-primary-300) 60%, transparent),
+      color-mix(in srgb, var(--color-primary-200) 30%, transparent) 55%,
+      transparent
+    );
+  }
+  .hero_glow.is-left {
+    left: -34rem;
+    top: -11rem;
+    width: 68rem;
+    height: 68rem;
+    opacity: 0.7;
+  }
+  .hero_glow.is-right {
+    right: -42rem;
+    top: -48rem;
+    width: 90rem;
+    height: 90rem;
+  }
+</style>

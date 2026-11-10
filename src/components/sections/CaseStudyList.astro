@@ -1,0 +1,285 @@
+---
+/**
+ * "Case studies list" — every case study in a 2-column grid, with service
+ * filter buttons and page numbers. All cards are in the HTML (good for SEO and
+ * no-JS); a small script filters/paginates them and keeps ?service=&page= in the URL.
+ */
+import SectionTag from '../global/SectionTag.astro';
+import CaseStudyCard from '../case-studies/CaseStudyCard.astro';
+import chevron from '../../assets/icons/chevron.svg?raw';
+import { getCaseStudies, populated, type BlockOf, type Service } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'caseStudyList'>;
+}
+const { block } = Astro.props;
+const items = await getCaseStudies();
+const perPage = Math.max(2, block.perPage || 6);
+
+const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const services = new Map<string, string>();
+for (const c of items) {
+  const s = populated<Service>(c.service);
+  if (s && !services.has(key(s.title))) services.set(key(s.title), s.title);
+}
+const showFilters = block.showFilters !== false && services.size > 1;
+---
+
+<section class="section_case-study-list relative" id={block.anchorId || undefined} data-cs-list data-per-page={perPage}>
+  <div class="case-study-list_axis grid-line-v pointer-events-none absolute top-0 bottom-24 left-[calc(50%-2.25px)] max-lg:hidden" aria-hidden="true"></div>
+  <div class="padding-global relative">
+    <div class="container-large">
+      <div class="case-study-list_component pb-16 lg:pb-[8.6rem]">
+        {
+          (block.tag || block.heading) && (
+            <div class="case-study-list_header mb-10 flex flex-col items-start gap-7 lg:mb-14" data-reveal>
+              <SectionTag text={block.tag} />
+              {block.heading && <h2 class="case-study-list_heading heading-style-h1 is-compact text-neutral-800">{block.heading}</h2>}
+            </div>
+          )
+        }
+
+        {
+          showFilters && (
+            <div class="case-study-list_filters relative z-10 -mx-1 mb-8 flex gap-2 overflow-x-auto px-1 pb-2 lg:mb-10 lg:flex-wrap" role="group" aria-label="Filter by service" data-reveal>
+              <button type="button" class="case-study-list_filter is-active" data-filter="" aria-pressed="true">{block.allLabel || 'All'}</button>
+              {[...services].map(([value, label]) => (
+                <button type="button" class="case-study-list_filter" data-filter={value} aria-pressed="false">{label}</button>
+              ))}
+            </div>
+          )
+        }
+
+        <ul class="case-study-list_grid relative z-10 grid gap-6 md:grid-cols-2 lg:gap-x-12 lg:gap-y-10" data-grid data-reveal aria-live="polite">
+          {
+            items.map((c, i) => {
+              const s = populated<Service>(c.service);
+              return (
+                <li class="case-study-list_item" data-service={s ? key(s.title) : ''} data-index={i}>
+                  <CaseStudyCard item={c} headingLevel={block.heading ? 'h3' : 'h2'} />
+                </li>
+              );
+            })
+          }
+        </ul>
+
+        <p class="case-study-list_empty text-size-large py-16 text-center text-muted" data-empty hidden>{block.emptyText}</p>
+
+        <nav class="case-study-list_pagination relative z-10 mt-12 flex items-center justify-center gap-2 lg:mt-16" aria-label={block.paginationLabel || 'Pages'} data-pagination hidden>
+          <button type="button" class="case-study-list_page is-arrow" data-step="-1" aria-label="Previous page">
+            <span class="rotate-90 [&_svg]:h-2.5 [&_svg]:w-[18px]" aria-hidden="true" set:html={chevron} />
+          </button>
+          <ol class="flex items-center gap-2" data-pages></ol>
+          <button type="button" class="case-study-list_page is-arrow" data-step="1" aria-label="Next page">
+            <span class="-rotate-90 [&_svg]:h-2.5 [&_svg]:w-[18px]" aria-hidden="true" set:html={chevron} />
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .case-study-list_filter {
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid var(--color-neutral-300);
+    background: var(--color-white, #fff);
+    padding: 0.75rem 1.125rem;
+    font-size: 0.875rem;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-neutral-700);
+    white-space: nowrap;
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      border-color 0.3s var(--ease-out-soft),
+      color 0.3s var(--ease-out-soft);
+  }
+  .case-study-list_filter:hover {
+    border-color: var(--color-primary-300);
+    color: var(--color-primary-700);
+  }
+  .case-study-list_filter.is-active {
+    border-color: var(--color-primary-700);
+    background: var(--color-primary-700);
+    color: var(--color-primary-25);
+  }
+  .case-study-list_filters {
+    scrollbar-width: none;
+  }
+
+  .case-study-list_page {
+    display: flex;
+    width: 3rem;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--color-neutral-300);
+    background: var(--color-white, #fff);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-neutral-700);
+    font-variant-numeric: tabular-nums;
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      border-color 0.3s var(--ease-out-soft),
+      color 0.3s var(--ease-out-soft),
+      opacity 0.3s var(--ease-out-soft);
+  }
+  .case-study-list_page:hover {
+    border-color: var(--color-primary-500);
+    color: var(--color-primary-700);
+  }
+  .case-study-list_page[aria-current='page'] {
+    border-color: var(--color-primary-700);
+    background: var(--color-primary-700);
+    color: var(--color-primary-25);
+  }
+  .case-study-list_page.is-arrow {
+    color: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+  }
+  .case-study-list_page:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .case-study-list_gap {
+    width: 1.5rem;
+    text-align: center;
+    color: var(--color-neutral-500);
+  }
+
+  /* Cards fade up when the filter or page changes. */
+  .case-study-list_item {
+    transition:
+      opacity 0.45s var(--ease-out-soft),
+      transform 0.45s var(--ease-out-soft);
+  }
+  .case-study-list_item.is-entering {
+    opacity: 0;
+    transform: translate3d(0, 0.75rem, 0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .case-study-list_item {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { getLenis, reduceMotion } from '../../lib/scroll';
+
+  document.querySelectorAll<HTMLElement>('[data-cs-list]').forEach((section) => {
+    const perPage = Number(section.dataset.perPage) || 6;
+    const items = [...section.querySelectorAll<HTMLElement>('.case-study-list_item')];
+    const filters = [...section.querySelectorAll<HTMLButtonElement>('.case-study-list_filter')];
+    const nav = section.querySelector<HTMLElement>('[data-pagination]')!;
+    const pagesList = section.querySelector<HTMLOListElement>('[data-pages]')!;
+    const empty = section.querySelector<HTMLElement>('[data-empty]')!;
+    const arrows = [...nav.querySelectorAll<HTMLButtonElement>('[data-step]')];
+
+    const params = new URLSearchParams(location.search);
+    let service = params.get('service') ?? '';
+    if (!filters.some((f) => f.dataset.filter === service)) service = '';
+    let page = Math.max(1, Number(params.get('page')) || 1);
+
+    /** 1 … 4 5 6 … 12 — always first, last and the pages around the current one. */
+    const pageList = (total: number, current: number) => {
+      const set = new Set([1, total, current - 1, current, current + 1].filter((p) => p >= 1 && p <= total));
+      const sorted = [...set].sort((a, b) => a - b);
+      const out: (number | '…')[] = [];
+      sorted.forEach((p, i) => {
+        if (i && p - sorted[i - 1] > 1) out.push('…');
+        out.push(p);
+      });
+      return out;
+    };
+
+    const syncUrl = () => {
+      const q = new URLSearchParams(location.search);
+      service ? q.set('service', service) : q.delete('service');
+      page > 1 ? q.set('page', String(page)) : q.delete('page');
+      const qs = q.toString();
+      history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`);
+    };
+
+    const render = (animate: boolean) => {
+      const matches = items.filter((el) => !service || el.dataset.service === service);
+      const total = Math.max(1, Math.ceil(matches.length / perPage));
+      page = Math.min(page, total);
+      const visible = new Set(matches.slice((page - 1) * perPage, page * perPage));
+
+      items.forEach((el) => {
+        const show = visible.has(el);
+        el.hidden = !show;
+        if (show && animate && !reduceMotion) {
+          el.classList.add('is-entering');
+          requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('is-entering')));
+        }
+      });
+
+      filters.forEach((f) => {
+        const on = (f.dataset.filter ?? '') === service;
+        f.classList.toggle('is-active', on);
+        f.setAttribute('aria-pressed', String(on));
+      });
+
+      empty.hidden = matches.length > 0;
+      nav.hidden = total < 2;
+      arrows[0].disabled = page <= 1;
+      arrows[1].disabled = page >= total;
+      pagesList.replaceChildren(
+        ...pageList(total, page).map((p) => {
+          const li = document.createElement('li');
+          if (p === '…') {
+            li.className = 'case-study-list_gap';
+            li.textContent = '…';
+            li.setAttribute('aria-hidden', 'true');
+          } else {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'case-study-list_page';
+            b.textContent = String(p);
+            b.dataset.page = String(p);
+            b.setAttribute('aria-label', `Page ${p}`);
+            if (p === page) b.setAttribute('aria-current', 'page');
+            li.append(b);
+          }
+          return li;
+        }),
+      );
+      syncUrl();
+    };
+
+    const scrollToList = () => {
+      const top = section.getBoundingClientRect().top;
+      if (top > -10 && top < window.innerHeight * 0.4) return; // already in view
+      const lenis = getLenis();
+      lenis ? lenis.scrollTo(section, { offset: -24 }) : section.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+    };
+
+    filters.forEach((f) =>
+      f.addEventListener('click', () => {
+        if ((f.dataset.filter ?? '') === service) return;
+        service = f.dataset.filter ?? '';
+        page = 1;
+        render(true);
+      }),
+    );
+    nav.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+      if (!btn || btn.disabled) return;
+      const next = btn.dataset.page ? Number(btn.dataset.page) : page + Number(btn.dataset.step);
+      if (next === page) return;
+      page = next;
+      render(true);
+      scrollToList();
+    });
+
+    render(false);
+  });
+</script>

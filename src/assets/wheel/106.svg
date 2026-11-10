@@ -1,0 +1,32 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="250.812" height="314.164" viewBox="0 0 250.812 314.164" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="LWPOLYLINE_106_">
+<g id="Vector" filter="url(#filter0_d_0_13)">
+<use xlink:href="#stroke0_0_13" fill="#F5F5F5"/>
+<use xlink:href="#stroke0_0_13" fill="url(#paint0_linear_0_13)" fill-opacity="0.5"/>
+<path d="M242.712 1.5C154.717 1.5 70.3226 36.4552 8.1 98.6796L204.482 295.064C214.621 284.924 228.372 279.226 242.712 279.226V1.5Z" stroke-width="3" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_13" x="4.76837e-07" y="0" width="250.812" height="314.164" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="11"/>
+<feGaussianBlur stdDeviation="3.3"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_13"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_13" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_13" x1="-245.502" y1="-320.817" x2="343.041" y2="267.726" gradientUnits="userSpaceOnUse">
+<stop stop-color="#231F20"/>
+<stop offset="0.1313" stop-color="#524F50"/>
+<stop offset="0.2957" stop-color="#868485"/>
+<stop offset="0.4569" stop-color="#B2B0B0"/>
+<stop offset="0.6111" stop-color="#D3D2D3"/>
+<stop offset="0.7567" stop-color="#EBEBEB"/>
+<stop offset="0.8901" stop-color="#FAFAFA"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+<path id="stroke0_0_13" d="M242.712 1.5C154.717 1.5 70.3226 36.4552 8.1 98.6796L204.482 295.064C214.621 284.924 228.372 279.226 242.712 279.226V1.5Z"/>
+</defs>
+</svg>

@@ -1,0 +1,15 @@
+---
+/** "Grid lines divider" — the decorative hairline + dot row used between sections. */
+import GridDivider from '../global/GridDivider.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'divider'>;
+}
+const { block } = Astro.props;
+const nodes = block.nodes === '3' ? 3 : 1;
+---
+
+<div class="section_divider relative z-10 py-12 lg:py-[5.5rem]" id={block.anchorId || undefined}>
+  <GridDivider nodes={nodes} top={block.lineUp ?? true} bottom={block.lineDown ?? true} />
+</div>

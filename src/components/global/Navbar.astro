@@ -1,0 +1,114 @@
+---
+import Button from './Button.astro';
+import CmsImage from './CmsImage.astro';
+import menuIcon from '../../assets/icons/menu.svg?raw';
+import { linkAttrs, type Header } from '../../lib/cms';
+
+interface Props {
+  header: Header;
+}
+const { header } = Astro.props;
+---
+
+<header class="navbar_component relative z-50">
+  <div class="padding-global">
+    <div class="container-large">
+      <nav class="navbar_container flex items-center justify-between gap-4 pt-6 lg:pt-10" aria-label="Main">
+        <a href="/" class="navbar_logo-link flex items-center gap-2" aria-label={`${header.brandName} home`}>
+          <CmsImage
+            media={header.logo}
+            class="navbar_logo h-10 w-auto mix-blend-multiply lg:h-12"
+            loading="eager"
+            decorative
+          />
+          <span class="navbar_brand font-brand text-[1.5rem] leading-none font-bold tracking-[-0.02em] text-ink lg:text-[1.75rem]">
+            {header.brandName}
+          </span>
+        </a>
+
+        <div class="navbar_actions relative flex items-center gap-2">
+          <ul
+            id="navbar-menu"
+            class="navbar_menu absolute top-[calc(100%+0.75rem)] right-0 flex flex-col gap-1 rounded-card bg-neutral-900 p-3 lg:top-1/2 lg:right-[calc(100%+0.5rem)] lg:flex-row lg:items-center lg:gap-6 lg:rounded-button lg:px-7 lg:py-4"
+            data-open="false"
+          >
+            {
+              header.navLinks?.map((item) => (
+                <li>
+                  <a
+                    {...linkAttrs(item)}
+                    class="navbar_link block rounded-full px-4 py-2.5 text-sm leading-none font-bold tracking-[-0.02em] whitespace-nowrap text-neutral-300 uppercase transition-colors duration-300 hover:text-white lg:p-0"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          <Button link={header.cta} variant="primary" class="hide-mobile-portrait" />
+
+          <button
+            type="button"
+            class="navbar_menu-button flex size-(--button-height-large) items-center justify-center rounded-button bg-primary-100 transition-colors duration-300 hover:bg-primary-200"
+            aria-controls="navbar-menu"
+            aria-expanded="false"
+            aria-label="Open menu"
+          >
+            <span class="navbar_menu-icon [&_svg]:h-[8.47px] [&_svg]:w-[25.41px]" aria-hidden="true" set:html={menuIcon} />
+          </button>
+        </div>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<style>
+  .navbar_menu {
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, -0.5rem, 0);
+    transition:
+      opacity 0.3s var(--ease-out-soft),
+      transform 0.3s var(--ease-out-soft),
+      visibility 0s linear 0.3s;
+  }
+  @media (min-width: 64rem) {
+    .navbar_menu {
+      transform: translate3d(0.75rem, -50%, 0);
+    }
+  }
+  .navbar_menu[data-open='true'] {
+    opacity: 1;
+    visibility: visible;
+    transform: translate3d(0, 0, 0);
+    transition-delay: 0s;
+  }
+  @media (min-width: 64rem) {
+    .navbar_menu[data-open='true'] {
+      transform: translate3d(0, -50%, 0);
+    }
+  }
+  .navbar_menu-icon :global(path) {
+    transition: transform 0.3s var(--ease-out-soft);
+    transform-origin: center;
+  }
+</style>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('.navbar_menu-button');
+  const menu = document.getElementById('navbar-menu');
+  if (button && menu) {
+    const setOpen = (open: boolean) => {
+      menu.dataset.open = String(open);
+      button.setAttribute('aria-expanded', String(open));
+      button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+    button.addEventListener('click', () => setOpen(menu.dataset.open !== 'true'));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+    document.addEventListener('click', (e) => {
+      if (menu.dataset.open === 'true' && !(e.target as Element).closest('.navbar_actions')) setOpen(false);
+    });
+    menu.addEventListener('click', (e) => (e.target as Element).closest('a') && setOpen(false));
+  }
+</script>

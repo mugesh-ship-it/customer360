@@ -1,0 +1,48 @@
+---
+/**
+ * Decorative grid row from the design: full-width hairlines with glowing dots on
+ * the page's vertical axes, plus optional vertical connectors above/below.
+ * `nodes` = 1 (centre only) or 3 (centre ± 18.75rem, matching the Figma grid).
+ */
+interface Props {
+  nodes?: 1 | 3;
+  top?: boolean;
+  bottom?: boolean;
+  class?: string;
+}
+const { nodes = 1, top = false, bottom = false, class: className } = Astro.props;
+const offsets = nodes === 3 ? ['-18.75rem', '0rem', '18.75rem'] : ['0rem'];
+---
+
+<div class:list={['grid-divider_component relative', className]} aria-hidden="true">
+  <div class="relative flex h-4 items-center">
+    <div class="grid-line-h flex-1" />
+    <div class="grid-line-h is-reverse flex-1" />
+    {
+      offsets.map((o, i) => (
+        <div
+          class:list={['grid-dot absolute top-0', i !== Math.floor(offsets.length / 2) && 'max-lg:hidden']}
+          style={`left: calc(50% + ${o} - 0.5rem)`}
+        />
+      ))
+    }
+  </div>
+  {
+    offsets.map((o, i) => (
+      <>
+        {top && (
+          <div
+            class:list={['grid-line-v absolute bottom-full h-12 lg:h-[5.5rem]', i !== Math.floor(offsets.length / 2) && 'max-lg:hidden']}
+            style={`left: calc(50% + ${o} - 2.25px)`}
+          />
+        )}
+        {bottom && (
+          <div
+            class:list={['grid-line-v absolute top-full h-12 lg:h-[5.5rem]', i !== Math.floor(offsets.length / 2) && 'max-lg:hidden']}
+            style={`left: calc(50% + ${o} - 2.25px)`}
+          />
+        )}
+      </>
+    ))
+  }
+</div>

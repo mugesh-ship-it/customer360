@@ -1,0 +1,59 @@
+---
+/** "Values" — title, then full-bleed columns that step down, ending in a photo. */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'values'>;
+}
+const { block } = Astro.props;
+const items = block.items ?? [];
+// Top offset of each column's text on desktop (Figma: 70 / 255 / 407 px of a 600 px column).
+const steps = [4.375, 15.9375, 25.4375, 31];
+---
+
+<section class="section_values" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="values_header flex flex-col items-start gap-7 pt-20 pb-12 lg:pt-[5rem] lg:pb-[4.86rem]" data-reveal>
+        <SectionTag text={block.tag} />
+        <h2 class="values_heading heading-style-h1 max-w-[50rem] text-neutral-800">{block.heading}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="values_list grid border-y border-neutral-400 bg-white sm:grid-cols-2"
+    style={`--values-cols: ${items.length}`}
+  >
+    {
+      items.map((item, i) => (
+        <div
+          class="values_item flex flex-col gap-6 border-neutral-400 py-10 pr-10 pl-(--padding-global) max-sm:not-first:border-t sm:border-l lg:min-h-[37.5rem] lg:gap-[2.44rem] lg:pt-(--values-offset) lg:pb-9 lg:pl-20"
+          style={`--values-offset: ${steps[i] ?? steps[steps.length - 1]}rem; --reveal-delay: ${i * 100}`}
+          data-reveal
+        >
+          <h3 class="values_title text-[1.75rem] leading-none font-semibold tracking-[-0.02em] text-primary-600">{item.title}</h3>
+          {item.description && <p class="values_text text-size-regular max-w-[14.2rem] leading-normal font-medium text-neutral-700">{item.description}</p>}
+        </div>
+      ))
+    }
+    {
+      block.image && (
+        <div class="values_visual relative min-h-[22rem] overflow-hidden max-sm:border-t sm:border-l sm:border-neutral-400 lg:min-h-0">
+          <CmsImage media={block.image} class="values_image absolute inset-0 size-full object-cover" sizes="(min-width: 64rem) 28vw, 100vw" />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  @media (min-width: 64rem) {
+    .values_list {
+      /* Text columns share the width equally; the photo column is ~16% wider (Figma 347 / 402). */
+      grid-template-columns: repeat(var(--values-cols), minmax(0, 1fr)) minmax(0, 1.16fr);
+    }
+  }
+</style>

@@ -1,0 +1,64 @@
+---
+/**
+ * "Product grid" — title + text on the left, product cards (Products collection)
+ * in a 2-column grid on the right. Each card has a notched top-left corner
+ * holding a round icon badge.
+ */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import { populated, type BlockOf, type Product } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'productGrid'>;
+}
+const { block } = Astro.props;
+const products = (block.products ?? []).map((p) => populated<Product>(p)).filter((p): p is Product => Boolean(p));
+---
+
+<section class="section_product-grid" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="product-grid_component grid gap-12 py-20 lg:grid-cols-[32.25rem_1fr] lg:gap-[5.7rem] lg:pt-[6.45rem] lg:pb-[13.5rem]">
+        <div class="product-grid_header flex flex-col items-start" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="product-grid_heading heading-style-h1 is-compact mt-7 text-neutral-800">{block.heading}</h2>
+          {block.description && <p class="product-grid_text text-size-large mt-6 leading-[1.64] font-medium text-neutral-700 lg:mt-10">{block.description}</p>}
+        </div>
+
+        <ul class="product-grid_list relative grid gap-6 sm:grid-cols-2 lg:gap-x-10 lg:gap-y-9 lg:pt-8">
+          <li class="product-grid_axis pointer-events-none absolute -top-16 bottom-[-6rem] left-1/2 flex -translate-x-1/2 flex-col items-center max-lg:hidden" aria-hidden="true">
+            <span class="grid-line-v flex-1"></span>
+            <span class="grid-dot my-2"></span>
+            <span class="grid-line-v flex-1 -scale-y-100"></span>
+          </li>
+          {
+            products.map((p, i) => {
+              const Tag = p.url ? 'a' : 'div';
+              return (
+                <li class="product-grid_item" data-reveal style={`--reveal-delay: ${(i % 2) * 100}`}>
+                  <Tag href={p.url || undefined} class="product-grid_card group relative flex aspect-[315/323] w-full flex-col justify-end">
+                    <svg class="product-grid_shape absolute inset-0 size-full" viewBox="0 0 315 323" preserveAspectRatio="none" aria-hidden="true">
+                      <path
+                        d="M315 299c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V118.569c0-13.255 10.745-24 24-24h48.643c13.254 0 24-10.745 24-24V24c0-13.255 10.745-24 24-24H291c13.255 0 24 10.745 24 24v275Z"
+                        class="fill-(--color-page) stroke-white transition-[fill] duration-500 group-hover:fill-white"
+                        stroke-width="2"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+                    <span class="product-grid_badge absolute top-0 left-0 flex size-[25.4%] max-w-20 items-center justify-center rounded-full border-2 border-primary-500 bg-(--color-page) transition-transform duration-500 ease-out-soft group-hover:scale-105" aria-hidden="true">
+                      <CmsImage media={p.icon} class="product-grid_icon size-[37.5%] object-contain" sizes="30px" decorative />
+                    </span>
+                    <div class="product-grid_body relative flex flex-col gap-4 pr-6 pb-10 pl-[11.4%] lg:gap-5">
+                      <h3 class="product-grid_title text-[clamp(1.25rem,1vw+0.9rem,1.5rem)] leading-tight font-semibold tracking-[-0.02em] text-neutral-700">{p.name}</h3>
+                      {p.summary && <p class="product-grid_summary text-base leading-normal tracking-[-0.02em] text-neutral-600">{p.summary}</p>}
+                    </div>
+                  </Tag>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

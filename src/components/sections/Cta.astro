@@ -1,0 +1,257 @@
+---
+import Button from '../global/Button.astro';
+import CmsImage from '../global/CmsImage.astro';
+import glowLeft from '../../assets/cta/cta-glow-left.svg?url';
+import glowRight from '../../assets/cta/cta-glow-right.svg?url';
+import { mediaUrl, populated, type BlockOf, type Media } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'cta'>;
+}
+const { block } = Astro.props;
+
+const turnVideo = populated<Media>(block.turnVideo);
+const turnVideoUrl = mediaUrl(turnVideo);
+const turnVideoMobileUrl = mediaUrl(block.turnVideoMobile) ?? turnVideoUrl;
+---
+
+<section class="section_cta relative" id={block.anchorId || undefined}>
+  {
+    turnVideoUrl ? (
+      /*
+       * Scroll-scrubbed turn: a tall track with a sticky stage. Scrolling down plays the
+       * video forwards (robot turns to face you), scrolling up plays it backwards.
+       */
+      <div class="cta_scrub relative" data-robot-scrub>
+        <div class="cta_scrub-stage sticky overflow-hidden">
+          <div class="cta_backdrop absolute inset-0" aria-hidden="true" />
+          {/* Placeholder until the first video frame is decoded (same robot, same pose) */}
+          <div class="cta_scrub-placeholder absolute inset-x-0 top-[12%] bottom-0 mx-auto aspect-square" aria-hidden="true">
+            <CmsImage media={block.image} decorative class="h-full w-full object-contain object-bottom" sizes="(min-width: 64rem) 680px, 90vw" />
+          </div>
+          <video
+            class="cta_scrub-video absolute inset-0 size-full object-cover"
+            data-robot-video
+            data-src={turnVideoUrl}
+            data-src-mobile={turnVideoMobileUrl}
+            muted
+            playsinline
+            disablepictureinpicture
+            disableremoteplayback
+            preload="none"
+            aria-label={turnVideo?.alt || undefined}
+          />
+          <div class="cta_scrub-top absolute inset-x-0 top-0 h-[18%]" aria-hidden="true" />
+          <div class="cta_fade absolute inset-x-0 bottom-0 h-[22%]" aria-hidden="true" />
+        </div>
+      </div>
+    ) : (
+      <div class="cta_visual relative h-[26rem] overflow-hidden md:h-[34rem] lg:h-[44.6rem]">
+        <div class="cta_backdrop absolute inset-0" aria-hidden="true" />
+        <div class="cta_robot absolute top-[6.3%] left-[calc(50%+1.15rem)] h-[95%] w-auto -translate-x-1/2" data-reveal>
+          <CmsImage media={block.image} class="h-full w-full max-w-none object-cover" sizes="(min-width: 64rem) 680px, 70vw" />
+        </div>
+        <div class="cta_fade absolute inset-x-0 bottom-0 h-[40%]" aria-hidden="true" />
+        <img src={glowRight} alt="" aria-hidden="true" class="cta_glow is-right absolute" width="200" height="236" />
+        <img src={glowLeft} alt="" aria-hidden="true" class="cta_glow is-left absolute" width="240" height="238" />
+      </div>
+    )
+  }
+  <div class="cta_content bg-primary-700">
+    <div class="padding-global">
+      <div class="container-large flex flex-col items-center gap-10 pt-12 pb-12 lg:gap-[3.75rem] lg:pt-[3.4rem] lg:pb-[3.78rem]" data-reveal>
+        <h2 class="cta_heading text-align-center max-w-[52rem] pb-[0.12em] text-[clamp(2.75rem,5.5vw+0.5rem,5.25rem)] leading-[1.05] font-semibold tracking-[-0.06em]">
+          {block.heading}
+        </h2>
+        <Button link={block.button} variant="white" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta_backdrop {
+    background-image: linear-gradient(180deg, rgb(233 232 237 / 0) 2.42%, rgb(102 145 221 / 0.624) 46.75%, var(--color-primary-700) 94%);
+  }
+  .cta_fade {
+    background-image: linear-gradient(180deg, rgb(76 142 255 / 0) 9.64%, var(--color-primary-700) 100%);
+  }
+
+  /* --- Scroll-scrubbed video ------------------------------------------- */
+  .cta_scrub {
+    /* stage height + how far you scroll while the robot turns */
+    --stage-h: 100svh;
+    --scrub-distance: 110svh;
+    height: calc(var(--stage-h) + var(--scrub-distance));
+  }
+  .cta_scrub-stage {
+    top: calc(100svh - var(--stage-h)); /* pinned; on phones it sits at the bottom of the screen */
+    height: var(--stage-h);
+  }
+  @media (max-width: 767px) {
+    .cta_scrub {
+      /* portrait video is 4:5 — size the stage to it so nothing gets cropped */
+      --stage-h: min(125vw, 100svh);
+      --scrub-distance: 80svh;
+    }
+  }
+  .cta_scrub-video {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    scale: 1.02; /* hide the 1px encoder edge on the left/right */
+  }
+  .cta_scrub-video.is-ready {
+    opacity: 1;
+  }
+  .cta_scrub-top {
+    background-image: linear-gradient(180deg, var(--color-page), rgb(245 245 245 / 0));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cta_scrub {
+      height: auto;
+    }
+    .cta_scrub-stage {
+      position: relative;
+      top: auto;
+    }
+  }
+
+  /* --- Static fallback (no video in the CMS) --------------------------- */
+  .cta_robot {
+    aspect-ratio: 578 / 679;
+  }
+  .cta_robot :global(img) {
+    width: 100%;
+    object-position: 47% center;
+  }
+  .cta_glow {
+    pointer-events: none;
+  }
+  .cta_glow.is-right {
+    top: calc(63.26% - 5.5rem);
+    left: calc(57.91% - 3.4rem);
+    width: clamp(7rem, 13.9vw, 12.5rem);
+  }
+  .cta_glow.is-left {
+    top: calc(43.99% - 3.1rem);
+    left: calc(23.86% - 3.1rem);
+    width: clamp(8rem, 16.6vw, 15rem);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cta_glow {
+      animation: cta-twinkle 4s ease-in-out infinite alternate;
+    }
+    .cta_glow.is-left {
+      animation-delay: -2s;
+    }
+  }
+  @keyframes cta-twinkle {
+    from {
+      opacity: 0.55;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  .cta_heading {
+    background-image: linear-gradient(90deg, var(--color-neutral-25), var(--color-primary-200));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+</style>
+
+<script>
+  import { onScroll, reduceMotion } from '../../lib/scroll';
+
+  /**
+   * Scroll → video frame. Progress comes from Lenis's smoothed scroll (no extra
+   * rAF loop, no layout reads per frame). Seeks are serialised: one in flight at
+   * a time, always jumping to the latest target frame, so fast scrolling never
+   * queues up a backlog. The video is encoded with every frame as a keyframe,
+   * which makes each seek a cheap single-frame decode.
+   */
+  const FPS = 24;
+  const scrub = document.querySelector<HTMLElement>('[data-robot-scrub]');
+  const video = scrub?.querySelector<HTMLVideoElement>('[data-robot-video]');
+
+  if (scrub && video) {
+    const mobile = window.matchMedia('(max-width: 767px)');
+    let frames = 0;
+    let target = 0;
+    let shown = -1;
+    let seeking = false;
+    let start = 0;
+    let end = 1;
+
+    const seek = () => {
+      if (seeking || !frames || target === shown) return;
+      seeking = true;
+      shown = target;
+      video.currentTime = Math.min((target + 0.5) / FPS, video.duration - 0.001);
+    };
+
+    video.addEventListener('seeked', () => {
+      seeking = false;
+      video.classList.add('is-ready');
+      seek(); // catch up if the scroll moved on while decoding
+    });
+
+    video.addEventListener('loadedmetadata', () => {
+      frames = Math.max(1, Math.round(video.duration * FPS));
+      shown = -1;
+      seeking = false;
+      // iOS Safari only paints seeked frames after the element has played once
+      video
+        .play()
+        .catch(() => {})
+        .finally(() => {
+          video.pause();
+          setTarget(reduceMotion ? 1 : progress(window.scrollY));
+        });
+    });
+
+    const load = () => {
+      const src = (mobile.matches && video.dataset.srcMobile) || video.dataset.src!;
+      if (video.getAttribute('src') === src) return;
+      video.classList.remove('is-ready');
+      video.preload = 'auto';
+      video.src = src;
+    };
+
+    // start = robot area enters from below, end = sticky stage releases
+    const measure = () => {
+      const top = scrub.getBoundingClientRect().top + window.scrollY;
+      start = top - window.innerHeight * 0.6;
+      end = top + scrub.offsetHeight - window.innerHeight;
+    };
+    const progress = (y: number) => Math.min(1, Math.max(0, (y - start) / (end - start)));
+    const setTarget = (p: number) => {
+      target = Math.round(p * (frames - 1));
+      seek();
+    };
+
+    // Only download the video when the section is getting close
+    new IntersectionObserver(
+      (entries, io) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          load();
+          io.disconnect();
+        }
+      },
+      { rootMargin: '150% 0px' },
+    ).observe(scrub);
+    mobile.addEventListener('change', () => video.getAttribute('src') && load());
+
+    measure();
+    new ResizeObserver(() => {
+      measure();
+      if (!reduceMotion) setTarget(progress(window.scrollY));
+    }).observe(document.body);
+
+    if (!reduceMotion) onScroll((y) => frames && setTarget(progress(y)));
+  }
+</script>

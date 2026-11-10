@@ -1,0 +1,78 @@
+/* Customer360 admin — light, friendly touches */
+:root {
+  --c360-blue: #175cd3;
+}
+
+.c360-welcome {
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eff8ff, #f5faff);
+  border: 1px solid #d1e9ff;
+
+  &__intro {
+    max-width: 44rem;
+    margin-bottom: 1.5rem;
+    h2 {
+      margin: 0 0 0.5rem;
+    }
+    p {
+      margin: 0 0 1rem;
+      line-height: 1.6;
+      color: var(--theme-elevation-700);
+    }
+  }
+  &__site {
+    display: inline-block;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: var(--c360-blue);
+    color: #fff !important;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 1rem;
+  }
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 1.25rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e4e7ec;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.2s;
+    strong {
+      color: var(--c360-blue);
+    }
+    span {
+      font-size: 0.85rem;
+      color: var(--theme-elevation-600);
+      line-height: 1.45;
+    }
+    &:hover {
+      border-color: var(--c360-blue);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+[data-theme='dark'] .c360-welcome {
+  background: var(--theme-elevation-50);
+  border-color: var(--theme-elevation-150);
+  &__card {
+    background: var(--theme-elevation-100);
+    border-color: var(--theme-elevation-150);
+  }
+}
+
+/* Make field help text a little easier to read */
+.field-description {
+  font-size: 0.85rem;
+  line-height: 1.45;
+}

@@ -1,0 +1,75 @@
+---
+/**
+ * "Featured testimonial" — title, one big quote and a cut-out photo standing on
+ * soft brand hexagons. The hexagons are inline SVG in the brand colour.
+ */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import quote from '../../assets/icons/quote.svg?raw';
+import { populated, type BlockOf, type Testimonial } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'featuredTestimonial'>;
+}
+const { block } = Astro.props;
+const t = populated<Testimonial>(block.testimonial);
+---
+
+<section class="section_featured-testimonial relative isolate overflow-hidden bg-primary-50" id={block.anchorId || undefined}>
+  <div class="featured-testimonial_shapes pointer-events-none absolute inset-0 -z-10 text-primary-500 max-lg:hidden" aria-hidden="true">
+    <svg class="absolute top-[-8.1rem] left-[5.56%] w-[106.4rem] max-w-none" viewBox="0 0 1475.58 1672.92" fill="none">
+      <path
+        d="M687.791 13.3975C718.731 -4.46582 756.851 -4.46582 787.791 13.3975L1425.58 381.626C1456.52 399.49 1475.58 432.502 1475.58 468.229V1204.69C1475.58 1240.41 1456.52 1273.43 1425.58 1291.29L787.791 1659.52C756.851 1677.38 718.731 1677.38 687.791 1659.52L50 1291.29C19.0599 1273.43 0 1240.41 0 1204.69V468.229C0 432.502 19.0599 399.49 50 381.626L687.791 13.3975Z"
+        stroke="currentColor"
+        stroke-opacity="0.2"
+        vector-effect="non-scaling-stroke"
+      />
+    </svg>
+    <svg class="absolute top-[6.2rem] left-[21.07%] w-[68rem] max-w-none" viewBox="0 0 1088.64 1226.12">
+      <path
+        fill="currentColor"
+        fill-opacity="0.05"
+        d="M494.322 13.3975C525.262 -4.46583 563.382 -4.46581 594.322 13.3975L1038.64 269.927C1069.58 287.79 1088.64 320.803 1088.64 356.529V869.588C1088.64 905.314 1069.58 938.327 1038.64 956.19L594.322 1212.72C563.382 1230.58 525.262 1230.58 494.322 1212.72L50 956.19C19.0599 938.327 0 905.314 0 869.588V356.529C0 320.803 19.0599 287.79 50 269.927L494.322 13.3975Z"
+      />
+    </svg>
+    <svg class="absolute top-[23.1rem] left-[42.3%] w-[40.1rem] max-w-none" viewBox="0 0 641.383 709.665">
+      <path
+        fill="currentColor"
+        fill-opacity="0.15"
+        d="M270.692 13.3975C301.632 -4.46582 339.751 -4.46582 370.692 13.3975L591.383 140.814C622.323 158.677 641.383 191.69 641.383 227.416V482.249C641.383 517.976 622.323 550.988 591.383 568.852L370.692 696.268C339.751 714.131 301.632 714.131 270.692 696.268L50 568.852C19.0599 550.988 0 517.976 0 482.249V227.416C0 191.69 19.0599 158.677 50 140.814L270.692 13.3975Z"
+      />
+    </svg>
+  </div>
+
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="featured-testimonial_component grid items-end gap-10 pt-16 lg:min-h-[47.7rem] lg:grid-cols-[32.25rem_1fr] lg:gap-8 lg:pt-0">
+        <div class="featured-testimonial_content flex flex-col items-start pb-6 lg:self-start lg:pt-[6.2rem] lg:pb-20">
+          <div class="flex flex-col items-start gap-7" data-reveal>
+            <SectionTag text={block.tag} />
+            <h2 class="featured-testimonial_heading heading-style-h1 is-compact text-neutral-800">{block.heading}</h2>
+          </div>
+          {
+            t && (
+              <figure class="featured-testimonial_quote mt-12 flex max-w-[30.85rem] flex-col items-start gap-7 lg:mt-[4.4rem]" data-reveal style="--reveal-delay: 100">
+                <span class="featured-testimonial_mark text-primary-600 [&_svg]:h-[3.75rem] [&_svg]:w-auto" aria-hidden="true" set:html={quote} />
+                <blockquote class="featured-testimonial_text text-lg leading-[1.64] font-semibold tracking-[-0.02em] text-neutral-700">{t.quote}</blockquote>
+                <figcaption class="featured-testimonial_author mt-3 flex flex-col gap-3">
+                  <span class="text-xl leading-none font-semibold tracking-[-0.02em] text-primary-800 uppercase">{t.name}</span>
+                  {t.role && <span class="text-size-regular leading-5 font-medium text-muted">{t.role}</span>}
+                </figcaption>
+              </figure>
+            )
+          }
+        </div>
+        <div class="featured-testimonial_visual relative flex justify-center lg:-mt-[0.9rem] lg:justify-end" data-reveal style="--reveal-delay: 150">
+          <CmsImage
+            media={block.image}
+            class="featured-testimonial_image h-auto w-full max-w-[26rem] lg:max-w-[41.5rem] lg:translate-x-[1.35rem]"
+            sizes="(min-width: 64rem) 664px, 26rem"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

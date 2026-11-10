@@ -1,0 +1,32 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="339.231" height="439.201" viewBox="0 0 339.231 439.201" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="LWPOLYLINE_103_">
+<g id="Vector" filter="url(#filter0_d_0_17)">
+<use xlink:href="#stroke0_0_17" fill="#F5F5F5"/>
+<use xlink:href="#stroke0_0_17" fill="url(#paint0_linear_0_17)" fill-opacity="0.5"/>
+<path d="M331.131 17.3336C316.79 17.3336 303.04 11.6369 292.901 1.5L8.1 286.298C93.7747 371.973 209.971 420.101 331.131 420.101V17.3336Z" stroke-width="3" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_17" x="4.76837e-07" y="0" width="339.231" height="439.201" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="11"/>
+<feGaussianBlur stdDeviation="3.3"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_17"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_17" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_17" x1="-257.099" y1="-274.899" x2="370.742" y2="352.942" gradientUnits="userSpaceOnUse">
+<stop stop-color="#231F20"/>
+<stop offset="0.1313" stop-color="#524F50"/>
+<stop offset="0.2957" stop-color="#868485"/>
+<stop offset="0.4569" stop-color="#B2B0B0"/>
+<stop offset="0.6111" stop-color="#D3D2D3"/>
+<stop offset="0.7567" stop-color="#EBEBEB"/>
+<stop offset="0.8901" stop-color="#FAFAFA"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+<path id="stroke0_0_17" d="M331.131 17.3336C316.79 17.3336 303.04 11.6369 292.901 1.5L8.1 286.298C93.7747 371.973 209.971 420.101 331.131 420.101V17.3336Z"/>
+</defs>
+</svg>

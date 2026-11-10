@@ -1,0 +1,41 @@
+---
+/**
+ * Renders a Payload media doc with intrinsic dimensions (no layout shift),
+ * lazy loading by default and a srcset for raster images.
+ */
+import { mediaSrcset, mediaUrl, populated, type Media } from '../../lib/cms';
+
+interface Props {
+  media: number | Media | null | undefined;
+  class?: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  decorative?: boolean;
+  [key: string]: unknown;
+}
+
+const { media, class: className, sizes = '100vw', loading = 'lazy', fetchpriority, decorative = false, ...rest } = Astro.props;
+const doc = populated(media);
+const src = mediaUrl(doc);
+const srcset = mediaSrcset(doc);
+---
+
+{
+  doc && src && (
+    <img
+      src={src}
+      srcset={srcset}
+      sizes={srcset ? sizes : undefined}
+      width={doc.width ?? undefined}
+      height={doc.height ?? undefined}
+      alt={decorative ? '' : (doc.alt ?? '')}
+      aria-hidden={decorative ? 'true' : undefined}
+      loading={loading}
+      decoding="async"
+      fetchpriority={fetchpriority}
+      class={className}
+      {...rest}
+    />
+  )
+}

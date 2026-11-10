@@ -1,0 +1,121 @@
+---
+/**
+ * "Case studies slider" — title + arrows, cards scroll sideways and bleed off
+ * the right edge. Native scroll-snap (touch/trackpad) + tiny arrow script.
+ */
+import SectionTag from '../global/SectionTag.astro';
+import chevron from '../../assets/icons/chevron.svg?raw';
+import CaseStudyCard from '../case-studies/CaseStudyCard.astro';
+import { populated, type BlockOf, type CaseStudy } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'caseStudies'>;
+}
+const { block } = Astro.props;
+const items = (block.caseStudies ?? []).map((c) => populated<CaseStudy>(c)).filter((c): c is CaseStudy => Boolean(c));
+---
+
+<section class="section_case-studies overflow-hidden" id={block.anchorId || undefined} data-case-studies>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="case-studies_header flex flex-col gap-8 pt-16 lg:flex-row lg:items-end lg:justify-between lg:pt-[6rem]">
+        <div class="case-studies_title flex flex-col items-start gap-7" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="case-studies_heading heading-style-h1 text-neutral-800">{block.heading}</h2>
+        </div>
+        {
+          items.length > 1 && (
+            <div class="case-studies_nav flex shrink-0 gap-2 max-lg:hidden" data-reveal style="--reveal-delay: 100">
+              <button type="button" class="case-studies_arrow" data-dir="-1" aria-label="Previous case study">
+                <span class="rotate-90 text-primary-500 [&_svg]:h-3 [&_svg]:w-[21.8px]" aria-hidden="true" set:html={chevron} />
+              </button>
+              <button type="button" class="case-studies_arrow" data-dir="1" aria-label="Next case study">
+                <span class="-rotate-90 text-primary-500 [&_svg]:h-3 [&_svg]:w-[21.8px]" aria-hidden="true" set:html={chevron} />
+              </button>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <ul class="case-studies_track mt-12 flex gap-6 overflow-x-auto pb-16 lg:mt-[9.375rem] lg:pb-[8.5rem]" data-track tabindex="0" aria-label={block.heading}>
+    {
+      items.map((c, i) => (
+        <li class="case-studies_item shrink-0" data-reveal style={`--reveal-delay: ${Math.min(i, 2) * 100}`}>
+          <CaseStudyCard item={c} />
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .case-studies_track {
+    /* Line the first card up with the container, let the rest run off the right edge. */
+    --track-inset: max(var(--padding-global), calc((100vw - var(--size-container-large)) / 2));
+    padding-inline: var(--track-inset);
+    scroll-padding-inline: var(--track-inset);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .case-studies_track::-webkit-scrollbar {
+    display: none;
+  }
+  .case-studies_item {
+    width: min(38.7rem, 85vw);
+    scroll-snap-align: start;
+  }
+  .case-studies_arrow {
+    display: flex;
+    width: 5rem;
+    height: 5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--color-primary-500);
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      opacity 0.3s var(--ease-out-soft),
+      transform 0.3s var(--ease-out-soft);
+  }
+  .case-studies_arrow:hover {
+    background-color: var(--color-primary-50);
+  }
+  .case-studies_arrow:active {
+    transform: scale(0.96);
+  }
+  .case-studies_arrow:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { reduceMotion } from '../../lib/scroll';
+
+  document.querySelectorAll<HTMLElement>('[data-case-studies]').forEach((section) => {
+    const track = section.querySelector<HTMLElement>('[data-track]');
+    const buttons = section.querySelectorAll<HTMLButtonElement>('.case-studies_arrow');
+    if (!track) return;
+
+    const step = () => {
+      const card = track.querySelector<HTMLElement>('.case-studies_item');
+      return card ? card.offsetWidth + parseFloat(getComputedStyle(track).columnGap || '0') : track.clientWidth;
+    };
+    const update = () => {
+      const max = track.scrollWidth - track.clientWidth - 2;
+      buttons.forEach((b) => (b.disabled = Number(b.dataset.dir) < 0 ? track.scrollLeft <= 2 : track.scrollLeft >= max));
+    };
+
+    buttons.forEach((b) =>
+      b.addEventListener('click', () =>
+        track.scrollBy({ left: Number(b.dataset.dir) * step(), behavior: reduceMotion ? 'auto' : 'smooth' }),
+      ),
+    );
+    track.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+  });
+</script>

@@ -1,0 +1,149 @@
+---
+/**
+ * "Steps accordion + illustration". Native <details name> gives an exclusive,
+ * keyboard-accessible accordion with no JS; a tiny script only updates the
+ * label above the illustration. Height animates in CSS where supported.
+ */
+import CmsImage from '../global/CmsImage.astro';
+import Illustration from '../global/Illustration.astro';
+import SectionTag from '../global/SectionTag.astro';
+import plus from '../../assets/icons/plus.svg?raw';
+import minus from '../../assets/icons/minus.svg?raw';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'approach'>;
+}
+const { block } = Astro.props;
+const items = block.items ?? [];
+const group = `approach-${Math.random().toString(36).slice(2, 8)}`;
+const num = (i: number) => String(i + 1).padStart(2, '0');
+const caption = (i: number) => items[i]?.caption || items[i]?.title || '';
+const imageLeft = block.arrangement === 'imageLeft';
+---
+
+<section class="section_approach" id={block.anchorId || undefined} data-approach>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="approach_component pt-20 pb-20 lg:pt-[5rem] lg:pb-[5rem]">
+        <div class="approach_header flex flex-col items-start gap-7" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="approach_heading heading-style-h1 max-w-[45rem] text-neutral-800">{block.heading}</h2>
+        </div>
+
+        <div
+          class:list={[
+            'approach_row mt-12 grid items-start gap-12',
+            imageLeft ? 'lg:mt-20 lg:grid-cols-[1fr_39.2rem] lg:gap-[5.1rem]' : 'lg:mt-[6.84rem] lg:grid-cols-[39.2rem_1fr] lg:gap-[4.1rem]',
+          ]}
+        >
+          <div class="approach_list flex flex-col gap-6" data-reveal>
+            {
+              items.map((item, i) => (
+                <details class="approach_item overflow-clip rounded-lg border border-neutral-300 bg-white" name={group} open={i === 0} data-index={i}>
+                  <summary class="approach_summary flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 py-4 pr-[1.4rem] pl-[1.6rem] text-xl font-semibold tracking-[-0.02em] text-neutral-800">
+                    <span>{item.title}</span>
+                    <span class="approach_icon flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-100" aria-hidden="true">
+                      <span class="approach_icon-plus text-neutral-600 [&_svg]:size-6" set:html={plus} />
+                      <span class="approach_icon-minus text-neutral-800 [&_svg]:size-6" set:html={minus} />
+                    </span>
+                  </summary>
+                  {item.description && (
+                    <p class="approach_text px-7 pt-6 pb-6 text-lg leading-normal font-medium tracking-[-0.02em] text-neutral-600 lg:pt-[3.3rem] lg:pb-5">
+                      {item.description}
+                    </p>
+                  )}
+                </details>
+              ))
+            }
+          </div>
+
+          {
+            imageLeft ? (
+              <div class="approach_photo aspect-[572/516] w-full overflow-hidden bg-surface lg:order-first" data-reveal style="--reveal-delay: 150">
+                <CmsImage media={block.illustration} class="approach_photo-image size-full object-cover" sizes="(min-width: 64rem) 572px, 100vw" />
+              </div>
+            ) : (
+          <div class="approach_visual relative max-lg:hidden lg:pt-16" data-reveal style="--reveal-delay: 150">
+            {
+              items.length > 0 && (
+                <p class="approach_label absolute -top-4 left-[31.4%] flex flex-col gap-[1.2rem] leading-none whitespace-nowrap" aria-live="polite">
+                  <span class="approach_label-num text-lg font-semibold tracking-[-0.04em] text-primary-600" data-num>
+                    {num(0)}
+                  </span>
+                  <span class="approach_label-text text-lg font-medium tracking-[-0.03em] text-neutral-600" data-caption>
+                    {caption(0)}
+                  </span>
+                </p>
+              )
+            }
+            <Illustration media={block.illustration} class="approach_image w-full max-w-[36.65rem]" sizes="587px" />
+          </div>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" data-captions set:html={JSON.stringify(items.map((_, i) => caption(i)))} />
+</section>
+
+<style>
+  .approach_summary::-webkit-details-marker {
+    display: none;
+  }
+  .approach_icon-minus,
+  .approach_item[open] .approach_icon-plus {
+    display: none;
+  }
+  .approach_item[open] .approach_icon-minus {
+    display: block;
+  }
+  .approach_label {
+    transition: opacity 0.3s var(--ease-out-soft);
+  }
+  .approach_label.is-changing {
+    opacity: 0;
+  }
+
+  /* Smooth open/close (Chromium); other browsers just snap open. */
+  @media (prefers-reduced-motion: no-preference) {
+    .approach_list {
+      interpolate-size: allow-keywords;
+    }
+    .approach_item::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size 0.45s var(--ease-out-soft),
+        content-visibility 0.45s allow-discrete;
+    }
+    .approach_item[open]::details-content {
+      block-size: auto;
+    }
+  }
+</style>
+
+<script>
+  // Keep the "01 / caption" label in sync with the open step.
+  document.querySelectorAll<HTMLElement>('[data-approach]').forEach((section) => {
+    const label = section.querySelector<HTMLElement>('.approach_label');
+    const num = section.querySelector<HTMLElement>('[data-num]');
+    const text = section.querySelector<HTMLElement>('[data-caption]');
+    const captions: string[] = JSON.parse(section.querySelector('[data-captions]')?.textContent || '[]');
+    if (!label || !num || !text) return;
+
+    section.querySelectorAll<HTMLDetailsElement>('.approach_item').forEach((item) => {
+      item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        const i = Number(item.dataset.index);
+        label.classList.add('is-changing');
+        setTimeout(() => {
+          num.textContent = String(i + 1).padStart(2, '0');
+          text.textContent = captions[i] ?? '';
+          label.classList.remove('is-changing');
+        }, 180);
+      });
+    });
+  });
+</script>

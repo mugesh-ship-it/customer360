@@ -1,0 +1,21 @@
+---
+import polygon from '../../assets/icons/tag-polygon.svg?raw';
+import { scopeSvgIds } from '../../lib/svg';
+
+interface Props {
+  text?: string | null;
+  class?: string;
+  [key: string]: unknown;
+}
+const { text, class: className, ...rest } = Astro.props;
+const id = Math.random().toString(36).slice(2, 8);
+---
+
+{
+  text && (
+    <div class:list={['tag', className]} {...rest}>
+      <span class="-mx-[1.33px] -my-0.5 [&_svg]:h-3.5 [&_svg]:w-[12.66px]" aria-hidden="true" set:html={scopeSvgIds(polygon, `tag-${id}`)} />
+      <span>{text}</span>
+    </div>
+  )
+}

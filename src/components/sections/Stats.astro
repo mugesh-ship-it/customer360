@@ -1,0 +1,54 @@
+---
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'stats'>;
+}
+const { block } = Astro.props;
+const items = block.items ?? [];
+---
+
+<section class="section_stats relative" id={block.anchorId || undefined} aria-label="Key figures">
+  <!-- Screen-reader friendly static list; the marquee below is decorative -->
+  <ul class="sr-only">
+    {items.map((s) => <li>{s.value} {s.label}</li>)}
+  </ul>
+  <div class="stats_component overflow-hidden pt-8" aria-hidden="true">
+    <div class="stats_track flex w-max">
+      {
+        [0, 1].map(() => (
+          <div class="stats_list flex shrink-0 items-start gap-12 pr-12 lg:gap-[5.25rem] lg:pr-[5.25rem]">
+            {items.map((s) => (
+              <div class="stats_item flex items-start gap-2">
+                <span class="stats_value heading-style-display text-primary-900">{s.value}</span>
+                <span class="stats_label text-size-regular max-w-[8.5rem] pt-[0.6em] leading-tight font-semibold text-neutral-700 uppercase">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .stats_value {
+    /* trim the font's top bearing so the label aligns with the cap height */
+    margin-top: -0.12em;
+    padding-right: 0.12em;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .stats_track {
+      animation: stats-marquee 36s linear infinite;
+      will-change: transform;
+    }
+    .stats_component:hover .stats_track {
+      animation-play-state: paused;
+    }
+  }
+  @keyframes stats-marquee {
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+</style>

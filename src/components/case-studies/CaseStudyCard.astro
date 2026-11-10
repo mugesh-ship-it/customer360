@@ -1,0 +1,38 @@
+---
+/** Case-study card (Figma "Frame 1000006703"): service label, headline, outcome pills. */
+import { caseStudyHref, populated, type CaseStudy, type Service } from '../../lib/cms';
+
+interface Props {
+  item: CaseStudy;
+  class?: string;
+  headingLevel?: 'h2' | 'h3';
+}
+const { item: c, class: className, headingLevel: H = 'h3' } = Astro.props;
+const service = populated<Service>(c.service);
+const href = caseStudyHref(c);
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag
+  href={href || undefined}
+  class:list={[
+    'case-study-card group flex h-full min-h-[20rem] flex-col justify-between gap-10 rounded-3xl border-2 border-white bg-page px-7 py-8 transition-colors duration-500 hover:bg-white lg:min-h-[24.9rem] lg:px-[3.75rem]',
+    className,
+  ]}
+>
+  <div class="case-study-card_body flex flex-col gap-5 lg:gap-6">
+    {service && <p class="case-study-card_category text-base leading-none font-medium tracking-[-0.02em] text-neutral-500">{service.title}</p>}
+    <H class="case-study-card_title text-[clamp(1.5rem,1.9vw+0.75rem,2.5rem)] leading-[1.35] font-medium tracking-[-0.03em] text-neutral-700 transition-colors duration-500 group-hover:text-neutral-900">
+      {c.title}
+    </H>
+  </div>
+  {
+    c.tags && c.tags.length > 0 && (
+      <ul class="case-study-card_tags flex flex-wrap gap-2">
+        {c.tags.map((t) => (
+          <li class="case-study-card_tag rounded-full border border-neutral-500 px-4 py-3 text-sm leading-none font-medium tracking-[-0.02em] text-neutral-500">{t.label}</li>
+        ))}
+      </ul>
+    )
+  }
+</Tag>

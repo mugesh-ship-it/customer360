@@ -1,0 +1,89 @@
+---
+/**
+ * "Services grid" — centred title + illustrated service cards (Services collection).
+ * Desktop rows go 3 · 2 (right) · 2 (left), repeating; each card has a notched
+ * corner holding the arrow link.
+ */
+import Illustration from '../global/Illustration.astro';
+import SectionTag from '../global/SectionTag.astro';
+import arrow from '../../assets/icons/arrow-right.svg?raw';
+import { populated, type BlockOf, type Service, type Media } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'serviceGrid'>;
+}
+const { block } = Astro.props;
+const services = (block.services ?? []).map((s) => populated<Service>(s)).filter((s): s is Service => Boolean(s));
+// Illustrations keep their Figma scale: width relative to the 405px card.
+const artWidth = (m: Service['illustration']) => {
+  const w = populated<Media>(m)?.width;
+  return w ? `${Math.min(84, (w / 405.33) * 100).toFixed(2)}%` : '55%';
+};
+---
+
+<section class="section_service-grid" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="service-grid_component pt-20 pb-16 lg:pt-[5.6rem] lg:pb-[6rem]">
+        <div class="service-grid_header mx-auto flex max-w-[52.7rem] flex-col items-center gap-7 text-center" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="service-grid_heading heading-style-h1 max-w-[47.6rem] text-neutral-800">{block.heading}</h2>
+        </div>
+
+        <ul class="service-grid_list mt-12 grid gap-6 sm:grid-cols-2 lg:mt-[9.375rem] lg:grid-cols-3 lg:gap-x-8 lg:gap-y-9">
+          {
+            services.map((s, i) => {
+              const Tag = s.url ? 'a' : 'div';
+              return (
+                <li class="service-grid_item" data-reveal style={`--reveal-delay: ${(i % 3) * 100}`}>
+                  <Tag href={s.url || undefined} class="service-grid_card group relative block aspect-[405/479] w-full">
+                    <svg class="service-grid_shape absolute inset-0 size-full" viewBox="0 0 407.332 481.091" preserveAspectRatio="none" aria-hidden="true">
+                      <path
+                        d="M382.332 1H25C11.745 1 1 11.745 1 25v431.091c0 13.255 10.745 24 24 24h261.408c13.255 0 24-10.745 24-24v-47.418c0-13.254 10.746-24 24-24h47.924c13.255 0 24-10.745 24-24V25c0-13.255-10.745-24-24-24Z"
+                        class="fill-(--color-card) stroke-white transition-[fill] duration-500"
+                        stroke-width="2"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+                    <div class="service-grid_content relative flex h-full flex-col px-[8.9%] pt-[10%]">
+                      <h3 class="service-grid_title text-[clamp(1.25rem,1vw+0.9rem,1.5rem)] leading-tight font-semibold tracking-[-0.02em] text-neutral-700">{s.title}</h3>
+                      {s.summary && <p class="service-grid_text mt-4 max-w-[20.8rem] text-base leading-normal tracking-[-0.02em] text-neutral-500 lg:mt-5">{s.summary}</p>}
+                      <div class="service-grid_visual flex flex-1 items-center justify-center pt-6 pb-[16%] lg:absolute lg:inset-x-0 lg:top-[33%] lg:bottom-[9%] lg:p-0">
+                        <Illustration
+                          media={s.illustration}
+                          class="service-grid_image max-h-full"
+                          style={`width: ${artWidth(s.illustration)}`}
+                          sizes="340px"
+                          decorative
+                        />
+                      </div>
+                    </div>
+                    <span
+                      class="service-grid_arrow absolute right-0 bottom-0 flex aspect-square w-[18.15%] items-center justify-center rounded-full border-2 border-white bg-(--color-card) text-primary-600 transition-colors duration-500 group-hover:bg-primary-600 group-hover:text-white"
+                      aria-hidden="true"
+                    >
+                      <span class="service-grid_arrow-icon w-[36%] -rotate-45 transition-transform duration-500 ease-out-soft group-hover:rotate-0 [&_svg]:h-auto [&_svg]:w-full" set:html={arrow} />
+                    </span>
+                    {s.url && <span class="sr-only">Learn more about {s.title}</span>}
+                  </Tag>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .section_service-grid {
+    --color-card: var(--color-page);
+  }
+  /* Figma rhythm: 3 cards, then 2 aligned right, then 2 aligned left. */
+  @media (min-width: 64rem) {
+    .service-grid_item:nth-child(7n + 4) {
+      grid-column-start: 2;
+    }
+  }
+</style>

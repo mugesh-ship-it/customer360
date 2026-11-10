@@ -1,0 +1,32 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="393.122" height="314.156" viewBox="0 0 393.122 314.156" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="LWPOLYLINE_104_">
+<g id="Vector" filter="url(#filter0_d_0_11)">
+<use xlink:href="#stroke0_0_11" fill="#F5F5F5"/>
+<use xlink:href="#stroke0_0_11" fill="url(#paint0_linear_0_11)" fill-opacity="0.5"/>
+<path d="M385.022 39.73C374.881 29.5896 369.188 15.8366 369.188 1.5H8.1C8.1 111.603 51.8372 217.199 129.695 295.056L385.022 39.73Z" stroke-width="3" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_11" x="4.76837e-07" y="0" width="393.122" height="314.156" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="11"/>
+<feGaussianBlur stdDeviation="3.3"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_11"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_11" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_11" x1="-109.689" y1="-166.237" x2="263.095" y2="161.931" gradientUnits="userSpaceOnUse">
+<stop stop-color="#231F20"/>
+<stop offset="0.1313" stop-color="#524F50"/>
+<stop offset="0.2957" stop-color="#868485"/>
+<stop offset="0.4569" stop-color="#B2B0B0"/>
+<stop offset="0.6111" stop-color="#D3D2D3"/>
+<stop offset="0.7567" stop-color="#EBEBEB"/>
+<stop offset="0.8901" stop-color="#FAFAFA"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+<path id="stroke0_0_11" d="M385.022 39.73C374.881 29.5896 369.188 15.8366 369.188 1.5H8.1C8.1 111.603 51.8372 217.199 129.695 295.056L385.022 39.73Z"/>
+</defs>
+</svg>

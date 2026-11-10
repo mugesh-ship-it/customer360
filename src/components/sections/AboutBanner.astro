@@ -1,0 +1,121 @@
+---
+import Button from '../global/Button.astro';
+import CmsImage from '../global/CmsImage.astro';
+import GridDivider from '../global/GridDivider.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'aboutBanner'>;
+}
+const { block } = Astro.props;
+---
+
+<section class="section_about relative isolate mt-10 lg:mt-[3.7rem]" id={block.anchorId || undefined} data-sky>
+  <div class="about_sky absolute inset-x-0 bottom-0 -z-10" aria-hidden="true"></div>
+  <div class="about_background absolute inset-0 overflow-hidden" aria-hidden="true">
+    <CmsImage
+      media={block.backgroundRight}
+      class="absolute top-[14%] left-[47.6%] h-[89%] w-[68%] max-w-none object-cover opacity-50"
+      sizes="70vw"
+      decorative
+    />
+    <CmsImage
+      media={block.backgroundLeft}
+      class="absolute -top-[7%] -left-[9%] h-[107%] w-[55.4%] max-w-none object-cover object-right opacity-50"
+      sizes="55vw"
+      decorative
+    />
+  </div>
+  <div class="padding-global relative">
+    <div class="container-medium">
+      <div class="about_component flex flex-col items-center gap-10 py-12 lg:gap-[3.75rem] lg:pt-[5rem] lg:pb-[4.64rem]" data-reveal>
+        <p class="about_text heading-style-h2 text-align-center tracking-[-0.04em] text-neutral-900">{block.text}</p>
+        <Button link={block.button} />
+      </div>
+    </div>
+  </div>
+  <div class="relative flex justify-center" aria-hidden="true">
+    <div class="grid-line-v h-12 lg:h-[4rem]"></div>
+  </div>
+  <GridDivider class="relative" bottom />
+</section>
+
+<script>
+  // Sky transition: the banner and the section just above it start on the page colour and
+  // fade to the blue sky together while the banner is in view (and back when it leaves).
+  document.querySelectorAll<HTMLElement>('[data-sky]').forEach((banner) => {
+    const lead = banner.previousElementSibling instanceof HTMLElement ? banner.previousElementSibling : null;
+    lead?.classList.add('sky-lead');
+    const set = (on: boolean) => {
+      banner.classList.toggle('is-sky', on);
+      lead?.classList.toggle('is-sky', on);
+    };
+    if (!('IntersectionObserver' in window)) return set(true);
+    // Fires as soon as the banner's top passes 85% of the viewport, while the section
+    // above is still fully on screen, so both visibly change together.
+    new IntersectionObserver(([e]) => set(e.isIntersecting), { rootMargin: '0px 0px -15% 0px' }).observe(banner);
+  });
+</script>
+
+<style>
+  /*
+   * Sky gradient sampled from the Figma render (primary-600 tint fading into the page).
+   * It starts above the section so it also covers the gap to the section before it.
+   */
+  .section_about {
+    --sky-gap: 2.5rem; /* = mt-10 */
+    --sky-top: #9fc2e6;
+  }
+  @media (min-width: 64rem) {
+    .section_about {
+      --sky-gap: 3.7rem;
+    }
+  }
+  .about_sky {
+    top: calc(-1 * var(--sky-gap));
+    background-image: linear-gradient(
+      180deg,
+      var(--sky-top) 0%,
+      #a6c6e7 12%,
+      #b3cde7 28%,
+      #d3e1ec 46%,
+      #e8eef3 64%,
+      #f2f3f4 84%,
+      var(--color-page) 100%
+    );
+  }
+  .about_sky,
+  .about_background {
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-soft);
+  }
+  .section_about.is-sky :is(.about_sky, .about_background) {
+    opacity: 1;
+  }
+
+  /* The section before the banner gets a matching sky that runs into the banner's */
+  :global(.sky-lead) {
+    position: relative;
+    isolation: isolate;
+  }
+  :global(.sky-lead)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    /* page white at the top → the banner's sky blue at the bottom, so there's no hard edge */
+    background: linear-gradient(
+      180deg,
+      var(--color-page) 0%,
+      color-mix(in srgb, var(--color-page) 55%, #9fc2e6) 35%,
+      #b3cde7 70%,
+      #9fc2e6 100%
+    );
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-soft);
+    pointer-events: none;
+  }
+  :global(.sky-lead.is-sky)::before {
+    opacity: 1;
+  }
+</style>

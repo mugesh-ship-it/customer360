@@ -1,0 +1,51 @@
+---
+/** All search/social tags for <head>. Data comes from lib/seo.ts. */
+import { jsonLdString, type SeoData } from '../../lib/seo';
+import { mediaUrl } from '../../lib/cms';
+
+interface Props {
+  seo: SeoData;
+}
+const { seo } = Astro.props;
+const favicon = seo.favicon ? mediaUrl(seo.favicon, seo.favicon.mimeType === 'image/svg+xml' ? undefined : 'small') : null;
+---
+
+<title>{seo.title}</title>
+{seo.description && <meta name="description" content={seo.description} />}
+<link rel="canonical" href={seo.canonical} />
+<meta name="robots" content={seo.robots} />
+{seo.googleVerification && <meta name="google-site-verification" content={seo.googleVerification} />}
+{seo.bingVerification && <meta name="msvalidate.01" content={seo.bingVerification} />}
+{seo.themeColor && <meta name="theme-color" content={seo.themeColor} />}
+
+{favicon && <link rel="icon" href={favicon} type={seo.favicon?.mimeType ?? undefined} />}
+{seo.appleTouchIcon && <link rel="apple-touch-icon" href={seo.appleTouchIcon} />}
+<link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={seo.siteName} />
+<meta property="og:locale" content={seo.locale} />
+<meta property="og:url" content={seo.canonical} />
+<meta property="og:title" content={seo.title} />
+{seo.description && <meta property="og:description" content={seo.description} />}
+{
+  seo.image && (
+    <>
+      <meta property="og:image" content={seo.image.url} />
+      {seo.image.width && <meta property="og:image:width" content={String(seo.image.width)} />}
+      {seo.image.height && <meta property="og:image:height" content={String(seo.image.height)} />}
+      {seo.image.type && <meta property="og:image:type" content={seo.image.type} />}
+      <meta property="og:image:alt" content={seo.image.alt} />
+    </>
+  )
+}
+
+<!-- X / Twitter -->
+<meta name="twitter:card" content={seo.image ? 'summary_large_image' : 'summary'} />
+{seo.twitter && <meta name="twitter:site" content={seo.twitter} />}
+<meta name="twitter:title" content={seo.title} />
+{seo.description && <meta name="twitter:description" content={seo.description} />}
+{seo.image && <meta name="twitter:image" content={seo.image.url} />}
+
+<script type="application/ld+json" set:html={jsonLdString(seo.jsonLd)} />

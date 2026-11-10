@@ -1,0 +1,214 @@
+---
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import GridDivider from '../global/GridDivider.astro';
+import chevron from '../../assets/icons/chevron.svg?raw';
+import { populated, type BlockOf, type Testimonial } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'testimonials'>;
+}
+const { block } = Astro.props;
+const items = (block.testimonials ?? []).map((t) => populated<Testimonial>(t)).filter((t): t is Testimonial => Boolean(t));
+const pad = (n: number) => `(${String(n).padStart(2, '0')})`;
+---
+
+<section class="section_testimonials relative" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="testimonials_header grid gap-8 pt-16 lg:grid-cols-[13.8rem_1fr] lg:gap-[5.2rem] lg:pt-[3.43rem]" data-reveal>
+        {block.intro && <p class="text-size-regular font-medium text-neutral-600 lg:pt-[3.8rem]">{block.intro}</p>}
+        <div class="flex flex-col items-start gap-7 max-lg:-order-1">
+          <SectionTag text={block.tag} />
+          <h2 class="heading-style-h1 text-neutral-900">{block.heading}</h2>
+        </div>
+      </div>
+
+      <div
+        class="testimonials_component mt-12 flex flex-col-reverse gap-8 lg:mt-[3.83rem] lg:flex-row lg:items-end lg:gap-[7.9rem]"
+        data-slider
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={block.heading}
+        data-reveal
+      >
+        <div class="testimonials_nav flex shrink-0 gap-2">
+          <button type="button" class="testimonials_arrow is-prev" data-prev aria-label="Previous testimonial">
+            <span class="rotate-90 [&_svg]:h-3 [&_svg]:w-[21.8px]" aria-hidden="true" set:html={chevron} />
+          </button>
+          <button type="button" class="testimonials_arrow is-next" data-next aria-label="Next testimonial">
+            <span class="-rotate-90 [&_svg]:h-3 [&_svg]:w-[21.8px]" aria-hidden="true" set:html={chevron} />
+          </button>
+        </div>
+
+        <div class="testimonials_stage relative grid flex-1" data-stage>
+          {
+            items.map((t, i) => (
+              <figure
+                class="testimonials_card"
+                data-slide
+                data-state={i === 0 ? 'active' : i === 1 ? 'next' : 'after'}
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${items.length}`}
+                aria-hidden={i === 0 ? undefined : 'true'}
+              >
+                <div class="testimonials_card-side flex shrink-0 flex-row items-center justify-between gap-4 lg:w-[8.75rem] lg:flex-col lg:items-start">
+                  <CmsImage media={t.avatar} class="testimonials_avatar size-20 rounded-full object-cover lg:size-[8.75rem]" sizes="140px" />
+                  <span class="text-size-regular leading-5 font-semibold text-primary-700">{pad(i + 1)}</span>
+                </div>
+                <div class="testimonials_card-body flex flex-col justify-between gap-10 lg:w-[19.8rem]">
+                  <div class="flex flex-col gap-4">
+                    <figcaption class="text-[2rem] leading-none font-semibold tracking-[-0.02em] text-primary-950 uppercase">{t.name}</figcaption>
+                    {t.role && <p class="text-size-small font-medium text-neutral-500 uppercase">{t.role}</p>}
+                  </div>
+                  <blockquote class="flex flex-col gap-8">
+                    <p class="text-xl leading-tight font-bold tracking-[-0.02em] text-neutral-800 uppercase">{t.headline}</p>
+                    <p class="text-size-regular leading-5 font-medium text-neutral-600">{t.quote}</p>
+                  </blockquote>
+                </div>
+              </figure>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  <GridDivider nodes={3} top bottom class="mt-12 lg:mt-[5.92rem]" />
+</section>
+
+<style>
+  .testimonials_arrow {
+    display: flex;
+    width: 5rem;
+    height: 5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--color-primary-500);
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      transform 0.3s var(--ease-out-soft);
+  }
+  .testimonials_arrow:hover {
+    background-color: var(--color-primary-50);
+  }
+  .testimonials_arrow:active {
+    transform: scale(0.96);
+  }
+
+  .testimonials_card {
+    --scale-next: 0.575;
+    grid-area: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+    padding: 1.75rem;
+    border: 2px solid #fff;
+    border-radius: 1rem;
+    box-shadow: 1px 1px 5px rgb(0 0 0 / 0.05);
+    background-image: linear-gradient(195deg, rgb(231 255 254 / 0.2) 17.27%, rgb(46 144 250 / 0.2) 88.99%);
+    transform-origin: top left;
+    transition:
+      transform 0.8s var(--ease-out-soft),
+      opacity 0.6s var(--ease-out-soft);
+    will-change: transform;
+  }
+  .testimonials_card[data-state='before'],
+  .testimonials_card[data-state='next'],
+  .testimonials_card[data-state='after'] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .testimonials_card[data-state='before'] {
+    transform: translate3d(-2rem, 0, 0) scale(0.96);
+  }
+  .testimonials_card[data-state='after'],
+  .testimonials_card[data-state='next'] {
+    transform: translate3d(2rem, 0, 0) scale(0.96);
+  }
+
+  @media (min-width: 64rem) {
+    .testimonials_card {
+      flex-direction: row;
+      width: 36.85rem;
+      height: 34.7rem;
+      padding: 3rem;
+    }
+    /* Next card sits top-right at 57.5% scale, exactly like the Figma frame */
+    .testimonials_card[data-state='next'] {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+      transform: translate3d(var(--next-x, 0px), 0, 0) scale(var(--scale-next));
+    }
+    .testimonials_card[data-state='after'] {
+      transform: translate3d(calc(var(--next-x, 0px) + 6rem), 0, 0) scale(0.5);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .testimonials_card {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-slider]')) {
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
+    if (slides.length < 2) {
+      root.querySelector('.testimonials_nav')?.remove();
+      continue;
+    }
+    let index = 0;
+
+    const layout = () => {
+      // distance from stage left to where the scaled "next" card's left edge goes
+      const card = slides[0].offsetWidth;
+      const scale = 0.575;
+      stage.style.setProperty('--next-x', `${Math.max(0, stage.clientWidth - card * scale)}px`);
+    };
+
+    const render = () => {
+      const n = slides.length;
+      slides.forEach((slide, i) => {
+        const rel = (i - index + n) % n;
+        const state = rel === 0 ? 'active' : rel === 1 ? 'next' : rel === n - 1 && n > 2 ? 'before' : 'after';
+        slide.dataset.state = state;
+        slide.setAttribute('aria-hidden', String(state !== 'active'));
+      });
+    };
+
+    const go = (delta: number) => {
+      index = (index + delta + slides.length) % slides.length;
+      render();
+    };
+
+    root.querySelector('[data-prev]')?.addEventListener('click', () => go(-1));
+    root.querySelector('[data-next]')?.addEventListener('click', () => go(1));
+    stage.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('[data-state="next"]')) go(1);
+    });
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') go(-1);
+      if (e.key === 'ArrowRight') go(1);
+    });
+
+    // Swipe (touch/pen) — passive listeners, no layout reads during the gesture
+    let startX = 0;
+    stage.addEventListener('pointerdown', (e) => (startX = e.clientX), { passive: true });
+    stage.addEventListener(
+      'pointerup',
+      (e) => {
+        const dx = e.clientX - startX;
+        if (e.pointerType !== 'mouse' && Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+      },
+      { passive: true },
+    );
+
+    new ResizeObserver(layout).observe(stage);
+    layout();
+    render();
+  }
+</script>

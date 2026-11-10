@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RenderBlocks from '../components/RenderBlocks.astro';
+import { getPageBySlug } from '../lib/cms';
+
+const page = await getPageBySlug('home');
+if (!page) throw new Error('[cms] No page with slug "home". Run `npm run seed` in /cms.');
+---
+
+<Layout page={page}>
+  <RenderBlocks blocks={page.layout} />
+</Layout>

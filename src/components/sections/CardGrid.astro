@@ -1,0 +1,56 @@
+---
+/** "Title, text & card row" — e.g. About › Our Mission. */
+import Button from '../global/Button.astro';
+import Illustration from '../global/Illustration.astro';
+import SectionTag from '../global/SectionTag.astro';
+import { sectionBg } from '../../lib/sections';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'cardGrid'>;
+}
+const { block } = Astro.props;
+---
+
+<section class:list={['section_card-grid', sectionBg(block.background)]} id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="card-grid_component flex flex-col gap-12 py-12 lg:gap-16 lg:py-[4.5rem]">
+        <div class="card-grid_header flex flex-col gap-10 lg:gap-12">
+          <div class="card-grid_title flex flex-col items-start gap-7" data-reveal>
+            <SectionTag text={block.tag} />
+            <h2 class="card-grid_heading heading-style-h1 max-w-[52.4rem] text-neutral-800">{block.heading}</h2>
+          </div>
+          {
+            (block.description || block.button?.label) && (
+              <div class="card-grid_aside flex flex-col items-start gap-9 lg:ml-auto lg:w-[27.625rem]" data-reveal style="--reveal-delay: 100">
+                {block.description && <p class="card-grid_text text-size-regular font-medium text-neutral-600">{block.description}</p>}
+                <Button link={block.button} />
+              </div>
+            )
+          }
+        </div>
+
+        <div class="card-grid_list grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          {
+            block.cards?.map((card, i) => (
+              <article
+                class="card-grid_card group flex flex-col rounded-2xl border border-neutral-300 bg-white px-8 pt-12 pb-10 lg:min-h-[30rem] lg:px-[11.7%] lg:pt-[3.1rem] lg:pb-12"
+                data-reveal
+                style={`--reveal-delay: ${(i % 3) * 100}`}
+              >
+                <div class="card-grid_visual mx-auto flex aspect-square w-[46.4%] max-w-[11.75rem] items-center justify-center">
+                  <Illustration media={card.illustration} class="card-grid_image size-full" sizes="188px" />
+                </div>
+                <h3 class="card-grid_card-title mt-10 text-xl font-semibold tracking-[-0.02em] text-ink lg:mt-[3.3rem]">{card.title}</h3>
+                {card.description && (
+                  <p class="card-grid_card-text text-size-regular mt-4 max-w-[19.4rem] leading-6 font-medium text-muted">{card.description}</p>
+                )}
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

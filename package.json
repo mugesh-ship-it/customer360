@@ -1,0 +1,21 @@
+{
+  "name": "customer360",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "dev:cms": "npm --prefix cms run dev",
+    "seed": "npm --prefix cms run seed",
+    "publish:local": "astro build && astro preview --port 4321",
+    "start:cms": "npm --prefix cms run build && npm --prefix cms run start"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.4.1",
+    "lenis": "^1.3.27",
+    "tailwindcss": "^4.3.3"
+  }
+}

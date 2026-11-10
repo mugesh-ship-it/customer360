@@ -1,0 +1,243 @@
+---
+import Button from '../global/Button.astro';
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import GridDivider from '../global/GridDivider.astro';
+import { mediaUrl, type BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'globalReach'>;
+}
+const { block } = Astro.props;
+// full-resolution source so the redrawn dots stay crisp on retina screens
+const mapSrc = mediaUrl(block.image);
+---
+
+<section class="section_reach relative" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="reach_header flex flex-col gap-10 pt-16 lg:flex-row lg:items-end lg:justify-between lg:pt-[4.49rem]">
+        <div class="flex max-w-[59rem] flex-col items-start gap-7" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="heading-style-h1 text-neutral-900">{block.heading}</h2>
+        </div>
+        <div class="reach_aside flex shrink-0 flex-col items-start gap-9 lg:w-[21rem] lg:translate-y-[4.15rem]" data-reveal style="--reveal-delay: 100">
+          {block.description && <p class="text-size-regular font-semibold text-ink">{block.description}</p>}
+          <Button link={block.button} />
+        </div>
+      </div>
+      <div class="reach_visual relative mt-12 lg:mt-[7.51rem]" data-reach data-src={mapSrc}>
+        <CmsImage media={block.image} class="reach_map block h-auto w-full" sizes="(min-width: 80rem) 80rem, 100vw" />
+        <canvas class="reach_canvas pointer-events-none absolute inset-0 size-full" aria-hidden="true"></canvas>
+      </div>
+    </div>
+  </div>
+  <GridDivider top class="mt-12 lg:mt-[3.83rem]" />
+</section>
+
+<script>
+  /**
+   * Dotted world map on a canvas, so each dot can move on its own.
+   * Every dot (and each larger shape, e.g. the office buildings) is found in the CMS
+   * image and cut out of it as-is, so at rest the canvas is pixel-identical to the design.
+   *  - Appear: dots fill in from left to right, 0 → 100% of the map.
+   *  - Hover:  dots ease gently away from the cursor, then settle back.
+   * The <img> stays as the fallback (no JS, reduced motion, load error).
+   */
+  import { reduceMotion } from '../../lib/scroll';
+
+  type Piece = { sx: number; sy: number; sw: number; sh: number; cx: number; cy: number; t: number; ox: number; oy: number; s: number; big: boolean };
+
+  const ALPHA = 90; // a pixel counts as part of a dot above this alpha
+  const APPEAR_MS = 1600;
+  const SPAN = 0.18; // each dot's fade/grow time, as a fraction of the sweep
+  const RADIUS = 140; // hover reach, CSS px
+  const PUSH = 9; // max drift away from the cursor, CSS px
+  const SCALE = 0.12; // max extra size at the cursor
+  const EASE = 0.14; // follow speed (no overshoot)
+
+  const clamp = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const cubicOut = (t: number) => 1 - (1 - t) ** 3;
+
+  function extract(img: HTMLImageElement): { w: number; h: number; pieces: Piece[] } | null {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cx = c.getContext('2d', { willReadFrequently: true })!;
+    cx.drawImage(img, 0, 0);
+    const px = cx.getImageData(0, 0, w, h).data;
+    const seen = new Uint8Array(w * h);
+    const stack = new Int32Array(w * h);
+    const found: { n: number; x0: number; y0: number; x1: number; y1: number }[] = [];
+    const ink = (q: number) => !seen[q] && px[q * 4 + 3] >= ALPHA;
+
+    for (let i = 0; i < w * h; i++) {
+      if (seen[i] || px[i * 4 + 3] < ALPHA) continue;
+      let sp = 0, n = 0, x0 = w, y0 = h, x1 = 0, y1 = 0;
+      stack[sp++] = i; seen[i] = 1;
+      while (sp) {
+        const p = stack[--sp], x = p % w, y = (p - x) / w;
+        n++;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        if (x > 0 && ink(p - 1)) { seen[p - 1] = 1; stack[sp++] = p - 1; }
+        if (x < w - 1 && ink(p + 1)) { seen[p + 1] = 1; stack[sp++] = p + 1; }
+        if (y > 0 && ink(p - w)) { seen[p - w] = 1; stack[sp++] = p - w; }
+        if (y < h - 1 && ink(p + w)) { seen[p + w] = 1; stack[sp++] = p + w; }
+      }
+      found.push({ n, x0, y0, x1, y1 });
+    }
+    if (found.length < 50) return null; // not a dotted image
+
+    const sizes = found.map((f) => f.n).sort((a, b) => a - b);
+    const median = sizes[sizes.length >> 1];
+    const pad = Math.max(1, Math.round(w / 1200)); // keep the anti-aliased edge
+    const pieces: Piece[] = [];
+    for (const f of found) {
+      const big = f.n > median * 8;
+      const p = big ? pad * 3 : pad;
+      const sx = Math.max(0, f.x0 - p), sy = Math.max(0, f.y0 - p);
+      const sw = Math.min(w, f.x1 + 1 + p) - sx, sh = Math.min(h, f.y1 + 1 + p * (big ? 2 : 1)) - sy;
+      const cxp = sx + sw / 2;
+      pieces.push({
+        sx, sy, sw, sh, cx: cxp, cy: sy + sh / 2, big, ox: 0, oy: 0, s: 1,
+        t: (cxp / w) * 0.88 + Math.random() * 0.12,
+      });
+    }
+    // buildings last so they sit on top of the dots
+    pieces.sort((a, b) => Number(a.big) - Number(b.big));
+    return { w, h, pieces };
+  }
+
+  function mount(root: HTMLElement) {
+    const img = root.querySelector<HTMLImageElement>('.reach_map')!;
+    const canvas = root.querySelector<HTMLCanvasElement>('.reach_canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const src = new Image();
+    src.crossOrigin = 'anonymous';
+    src.decoding = 'async';
+    src.src = root.dataset.src || img.currentSrc || img.src;
+
+    src.decode().then(() => {
+      const map = extract(src);
+      if (!map) return;
+      const { w, pieces } = map;
+      const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+      let k = 1, dpr = 1, start = 0, appear = 0, raf = 0;
+      let hover = false, mx = -1e5, my = -1e5;
+
+      function draw(now: number, step: boolean) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+        ctx.imageSmoothingQuality = 'high';
+
+        if (step && start) appear = Math.min(1 + SPAN, ((now - start) / APPEAR_MS) * (1 + SPAN));
+        const R = RADIUS / k, R2 = R * R, push = PUSH / k;
+        let moving = start > 0 && appear < 1 + SPAN;
+
+        for (const p of pieces) {
+          const a = clamp((appear - p.t) / SPAN);
+          if (a <= 0) continue;
+
+          if (step) {
+            let tx = 0, ty = 0, ts = 1;
+            const dx = p.cx - mx, dy = p.cy - my, d2 = dx * dx + dy * dy;
+            if (hover && d2 < R2) {
+              const d = Math.sqrt(d2) || 1;
+              let f = 1 - d / R;
+              f = f * f * (3 - 2 * f); // smooth falloff, no hard edge
+              tx = (dx / d) * f * push * (p.big ? 0.4 : 1);
+              ty = (dy / d) * f * push * (p.big ? 0.4 : 1);
+              ts = 1 + f * (p.big ? SCALE * 0.4 : SCALE);
+            }
+            p.ox += (tx - p.ox) * EASE;
+            p.oy += (ty - p.oy) * EASE;
+            p.s += (ts - p.s) * EASE;
+            if (Math.abs(tx - p.ox) + Math.abs(ty - p.oy) > 0.01 / k || Math.abs(ts - p.s) > 0.001) moving = true;
+          }
+
+          const e = cubicOut(a);
+          const s = p.s * (0.4 + 0.6 * e);
+          const dw = p.sw * s, dh = p.sh * s;
+          const rise = p.big ? (1 - e) * 10 / k : 0;
+          ctx.globalAlpha = e;
+          ctx.drawImage(src, p.sx, p.sy, p.sw, p.sh, p.cx + p.ox - dw / 2, p.cy + p.oy - dh / 2 + rise, dw, dh);
+        }
+        ctx.globalAlpha = 1;
+        return moving;
+      }
+
+      const loop = (now: number) => {
+        raf = draw(now, true) || hover ? requestAnimationFrame(loop) : 0;
+      };
+      const kick = () => {
+        if (!raf) raf = requestAnimationFrame(loop);
+      };
+      const resize = () => {
+        const cw = root.clientWidth;
+        dpr = Math.min(devicePixelRatio || 1, 2);
+        k = cw / w;
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(map.h * k * dpr);
+        draw(performance.now(), false);
+      };
+
+      root.classList.add('is-canvas');
+      resize();
+      new ResizeObserver(resize).observe(root);
+
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return;
+          io.disconnect();
+          start = performance.now();
+          kick();
+        },
+        { threshold: 0.3 },
+      );
+      io.observe(root);
+
+      if (fine) {
+        root.addEventListener('pointermove', (ev) => {
+          const r = root.getBoundingClientRect();
+          mx = (ev.clientX - r.left) / k;
+          my = (ev.clientY - r.top) / k;
+          hover = true;
+          kick();
+        });
+        root.addEventListener('pointerleave', () => {
+          hover = false;
+          mx = my = -1e5;
+        });
+      }
+    }).catch(() => root.classList.remove('is-canvas'));
+  }
+
+  if (!reduceMotion) {
+    // Prepare shortly before the map scrolls into view
+    const prep = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          prep.unobserve(e.target);
+          mount(e.target as HTMLElement);
+        }
+      },
+      { rootMargin: '600px 0px' },
+    );
+    document.querySelectorAll<HTMLElement>('[data-reach]').forEach((r) => prep.observe(r));
+  }
+</script>
+
+<style>
+  .reach_canvas {
+    visibility: hidden;
+  }
+  .reach_visual.is-canvas .reach_canvas {
+    visibility: visible;
+  }
+  .reach_visual.is-canvas .reach_map {
+    opacity: 0;
+  }
+</style>

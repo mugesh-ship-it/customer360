@@ -1,0 +1,103 @@
+---
+import CmsImage from './CmsImage.astro';
+import { linkAttrs, type Footer } from '../../lib/cms';
+
+interface Props {
+  footer: Footer;
+}
+const { footer } = Astro.props;
+const headingClass = 'footer_heading text-lg leading-8 font-bold tracking-[-0.01em] text-primary-300 uppercase';
+const linkClass =
+  'footer_link text-sm leading-5 font-medium tracking-[-0.01em] text-neutral-25 transition-opacity duration-300 hover:opacity-70';
+---
+
+<footer class="footer_component bg-primary-700 text-neutral-25">
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="footer_top flex flex-col gap-12 pt-8 pb-16 lg:flex-row lg:justify-between lg:pb-24">
+        <div class="footer_contact flex flex-col gap-12 lg:w-[13.25rem]">
+          <div class="flex flex-col gap-6 lg:gap-8">
+            {footer.contactHeading && <p class={headingClass}>{footer.contactHeading}</p>}
+            <ul class="footer_contact-list flex flex-col gap-4">
+              {
+                footer.contactItems?.map((item) => {
+                  const attrs = linkAttrs(item);
+                  const Tag = attrs ? 'a' : 'span';
+                  return (
+                    <li>
+                      <Tag {...attrs} class:list={['flex items-center gap-2', linkClass]}>
+                        <CmsImage media={item.icon} class="size-4 object-contain" decorative />
+                        <span class="whitespace-nowrap">{item.label}</span>
+                      </Tag>
+                    </li>
+                  );
+                })
+              }
+            </ul>
+          </div>
+          <div class="flex flex-col gap-6 lg:gap-8">
+            {footer.socialHeading && <p class={headingClass}>{footer.socialHeading}</p>}
+            <ul class="footer_social-list flex items-center gap-4">
+              {
+                footer.socials?.map((item) => (
+                  <li>
+                    <a
+                      {...linkAttrs({ ...item, newTab: true })}
+                      aria-label={item.label}
+                      class="flex size-6 items-center justify-center transition-transform duration-300 hover:-translate-y-0.5"
+                    >
+                      <CmsImage media={item.icon} class="max-h-6 w-auto" decorative />
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer_columns grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-4 lg:flex lg:w-[45.5rem] lg:justify-between lg:gap-8">
+          {
+            footer.columns?.map((col) => (
+              <div class="footer_column flex flex-col gap-6 lg:gap-8">
+                <p class={headingClass}>{col.heading}</p>
+                <ul class="flex flex-col gap-3.5">
+                  {col.links?.map((l) => (
+                    <li>
+                      {linkAttrs(l) ? (
+                        <a {...linkAttrs(l)} class:list={[linkClass, 'lg:whitespace-nowrap']}>
+                          {l.label}
+                        </a>
+                      ) : (
+                        <span class={linkClass}>{l.label}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer_bottom border-t-[0.5px] border-neutral-50 pt-4 pb-5">
+    <div class="padding-global">
+      <div class="flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
+        {footer.brandName && <p class="font-brand-alt text-2xl leading-none tracking-[-0.04em]">{footer.brandName}</p>}
+        {footer.copyright && <p class="text-size-tiny font-semibold text-neutral-50 uppercase">{footer.copyright}</p>}
+        <ul class="flex items-center gap-4">
+          {
+            footer.legalLinks?.map((l) => (
+              <li>
+                <a {...linkAttrs(l)} class="text-size-tiny font-semibold text-neutral-50 uppercase transition-opacity duration-300 hover:opacity-70">
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>

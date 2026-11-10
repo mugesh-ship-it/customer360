@@ -1,0 +1,39 @@
+---
+/**
+ * CMS-driven button. Renders nothing when the link has no label/url.
+ * variant: outline (default) | primary | icon (label + white arrow chip) | white (CTA)
+ */
+import { linkAttrs, type LinkValue } from '../../lib/cms';
+import arrowRight from '../../assets/icons/arrow-hero.svg?raw';
+import arrowUpRight from '../../assets/icons/arrow-cta.svg?raw';
+import { scopeSvgIds } from '../../lib/svg';
+
+interface Props {
+  link: LinkValue;
+  variant?: 'outline' | 'primary' | 'icon' | 'white';
+  class?: string;
+}
+
+const { link, variant = 'outline', class: className = '' } = Astro.props;
+const attrs = linkAttrs(link);
+const variantClass = variant === 'outline' ? '' : `is-${variant}`;
+const id = Math.random().toString(36).slice(2, 8);
+---
+
+{
+  attrs && link?.label && (
+    <a {...attrs} class:list={['button', variantClass, className]}>
+      <span>{link.label}</span>
+      {variant === 'icon' && (
+        <span class="button_icon-wrap bg-primary-25 p-2 text-primary-700" aria-hidden="true">
+          <span class="flex h-[15px] w-2 items-center justify-center [&_svg]:h-2 [&_svg]:w-[15px] [&_svg]:-rotate-90" set:html={scopeSvgIds(arrowRight, `ar-${id}`)} />
+        </span>
+      )}
+      {variant === 'white' && (
+        <span class="button_icon-wrap bg-primary-800 p-2" aria-hidden="true">
+          <span class="flex size-3.5 -scale-y-100 items-center justify-center [&_svg]:size-3.5" set:html={scopeSvgIds(arrowUpRight, `au-${id}`)} />
+        </span>
+      )}
+    </a>
+  )
+}

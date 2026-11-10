@@ -1,0 +1,548 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   Every colour, font and size on the site is a CSS variable. The values below
+   are the defaults (they mirror cms/src/design/tokens.ts). Editors override
+   them in the CMS under Settings → Brand & design. Layout.astro prints the
+   saved values as a :root block, so a change there restyles the whole site.
+
+   Use the Tailwind utilities generated from these (bg-primary-700,
+   text-neutral-900, text-ink, font-brand…) and never hard-code hex values.
+   ========================================================================== */
+@theme {
+  /* Colour: brand scale */
+  --color-primary-25: #f5faff;
+  --color-primary-50: #eff8ff;
+  --color-primary-100: #d1e9ff;
+  --color-primary-200: #b2ddff;
+  --color-primary-300: #84caff;
+  --color-primary-400: #53b1fd;
+  --color-primary-500: #2e90fa;
+  --color-primary-600: #1570ef;
+  --color-primary-700: #175cd3;
+  --color-primary-800: #0f53c9;
+  --color-primary-900: #194185;
+  --color-primary-950: #102a56;
+
+  /* Colour: neutral scale */
+  --color-neutral-25: #fdfdfd;
+  --color-neutral-50: #fafafa;
+  --color-neutral-300: #d5d7da;
+  --color-neutral-400: #a4a7ae;
+  --color-neutral-500: #717680;
+  --color-neutral-600: #535862;
+  --color-neutral-700: #414651;
+  --color-neutral-800: #252b37;
+  --color-neutral-900: #181d27;
+
+  /* Colour: single-purpose */
+  --color-page: #f5f5f5;
+  --color-surface: #efefef;
+  --color-ink: #1f2937;
+  --color-muted: #6b7280;
+
+  /* Font families */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Piazzolla", Georgia, serif;
+  --font-brand-alt: "Sanchez", Georgia, serif;
+
+  /* Radius: rounded-button, rounded-card */
+  --radius-button: 9999px;
+  --radius-card: 1.5rem;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Layered so the CMS values Layout.astro prints (unlayered) always win. */
+@layer base {
+  :root {
+    /* Type scale: fluid between phone and desktop sizes */
+    --font-size-display: clamp(4.5rem, -0.0043rem + 13.8063vw, 12.43rem);
+    --font-size-h1: clamp(2.5rem, 0.5rem + 5vw, 4.5rem);
+    --font-size-h1Compact: clamp(2.5rem, 1rem + 3.75vw, 4rem);
+    --font-size-h2: clamp(1.625rem, 0.7514rem + 2.1978vw, 2.625rem);
+    --font-size-h3: 1.5rem;
+    --font-size-large: clamp(1.125rem, 1.081rem + 0.1878vw, 1.25rem);
+    --font-size-regular: 1rem;
+    --font-size-small: 0.875rem;
+
+    /* Content widths */
+    --size-container-large: 80rem;
+    --size-container-medium: 66rem;
+    --size-container-small: 52rem;
+
+    /* Page side margins */
+    --padding-global-mobile: 1.25rem;
+    --padding-global-tablet: 2.5rem;
+    --padding-global-desktop: 5rem;
+
+    /* Vertical section spacing */
+    --section-small-mobile: 3rem;
+    --section-small-desktop: 4rem;
+    --section-medium-mobile: 4rem;
+    --section-medium-desktop: 6rem;
+    --section-large-mobile: 5rem;
+    --section-large-desktop: 8rem;
+
+    /* Buttons */
+    --button-height: 2.75rem;
+    --button-height-large: 3.25rem;
+
+    /* Fluid section padding (used by .padding-section-*) */
+    --padding-section-small: var(--section-small-mobile);
+    --padding-section-medium: var(--section-medium-mobile);
+    --padding-section-large: var(--section-large-mobile);
+    --padding-global: var(--padding-global-mobile);
+  }
+
+  @media (width >= 48rem) {
+    :root {
+      --padding-global: var(--padding-global-tablet);
+    }
+  }
+  @media (width >= 64rem) {
+    :root {
+      --padding-global: var(--padding-global-desktop);
+      --padding-section-small: var(--section-small-desktop);
+      --padding-section-medium: var(--section-medium-desktop);
+      --padding-section-large: var(--section-large-desktop);
+    }
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    --page-bg: var(--color-page);
+    @apply font-sans text-neutral-900;
+    background-color: var(--page-bg);
+  }
+  /* Page setting "Page background: Lighter" (e.g. Services). */
+  body.is-light {
+    --page-bg: var(--color-neutral-50, #fafafa);
+  }
+  img,
+  svg {
+    @apply block max-w-full;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600;
+  }
+}
+
+/* Lenis recommended styles */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* ==========================================================================
+   Client-First: global structure
+   ========================================================================== */
+@layer components {
+  .page-wrapper {
+    @apply relative overflow-x-clip;
+  }
+  .main-wrapper {
+    @apply relative;
+  }
+
+  .padding-global {
+    padding-inline: var(--padding-global);
+  }
+  .container-large {
+    @apply mx-auto w-full max-w-(--size-container-large);
+  }
+  .container-medium {
+    @apply mx-auto w-full max-w-(--size-container-medium);
+  }
+  .container-small {
+    @apply mx-auto w-full max-w-(--size-container-small);
+  }
+
+  .padding-section-small {
+    padding-block: var(--padding-section-small);
+  }
+  .padding-section-medium {
+    padding-block: var(--padding-section-medium);
+  }
+  .padding-section-large {
+    padding-block: var(--padding-section-large);
+  }
+
+  /* Client-First: typography ---------------------------------------------- */
+  .heading-style-display {
+    @apply text-(length:--font-size-display) leading-none font-light tracking-[-0.12em];
+  }
+  .heading-style-h1 {
+    @apply text-(length:--font-size-h1) leading-[1.12] font-medium tracking-[-0.06em] lg:leading-[1.2];
+  }
+  /* Smaller section titles (Figma 64px), e.g. Products page. */
+  .heading-style-h1.is-compact {
+    @apply text-(length:--font-size-h1Compact) lg:leading-[1.25];
+  }
+  .heading-style-h2 {
+    @apply text-(length:--font-size-h2) leading-[1.3] font-medium tracking-[-0.03em];
+  }
+  .heading-style-h3 {
+    @apply text-(length:--font-size-h3) leading-tight font-semibold tracking-[-0.02em];
+  }
+  .text-size-large {
+    @apply text-(length:--font-size-large) leading-[1.5] font-medium tracking-[-0.02em];
+  }
+  .text-size-regular {
+    @apply text-(length:--font-size-regular) leading-normal tracking-[-0.02em];
+  }
+  .text-size-small {
+    @apply text-(length:--font-size-small) leading-5 tracking-[-0.02em];
+  }
+  .text-size-tiny {
+    @apply text-[0.625rem] leading-8 tracking-[-0.01em];
+  }
+  .text-weight-medium {
+    @apply font-medium;
+  }
+  .text-weight-semibold {
+    @apply font-semibold;
+  }
+  .text-weight-bold {
+    @apply font-bold;
+  }
+  .text-style-allcaps {
+    @apply uppercase;
+  }
+  .text-align-center {
+    @apply text-center;
+  }
+
+  /* Client-First: buttons -------------------------------------------------- */
+  .button {
+    @apply inline-flex h-(--button-height) items-center justify-center gap-2 rounded-button border border-primary-600 px-6 text-base leading-7 font-bold tracking-[-0.02em] whitespace-nowrap text-primary-600;
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      color 0.3s var(--ease-out-soft),
+      transform 0.3s var(--ease-out-soft);
+  }
+  .button:hover {
+    @apply bg-primary-600 text-primary-25;
+  }
+  .button.is-primary {
+    @apply h-(--button-height-large) border-primary-700 bg-primary-700 pr-[1.125rem] pl-4 text-primary-25;
+  }
+  .button.is-primary:hover {
+    @apply border-primary-800 bg-primary-800;
+  }
+  .button.is-icon {
+    @apply h-(--button-height-large) border-primary-700 bg-primary-700 py-2 pr-2 pl-4 text-primary-25;
+  }
+  .button.is-icon:hover {
+    @apply bg-primary-800;
+  }
+  .button.is-white {
+    @apply h-(--button-height-large) border-white bg-white py-1.5 pr-1.5 pl-5 font-semibold text-primary-800;
+  }
+  .button.is-white:hover {
+    @apply bg-primary-25;
+  }
+  .button_icon-wrap {
+    @apply flex aspect-square h-full items-center justify-center rounded-full;
+    transition: transform 0.35s var(--ease-out-soft);
+  }
+  .button:hover .button_icon-wrap {
+    transform: rotate(-45deg);
+  }
+
+  /* Section tag pill ------------------------------------------------------- */
+  /* Section tag: soft blue pill with a slowly travelling gradient border */
+  .tag {
+    @apply inline-flex items-center gap-2 rounded-full px-[11px] py-[9px] text-sm leading-none font-semibold tracking-[-0.02em] text-neutral-700;
+    --tag-fill: color-mix(in srgb, var(--color-primary-50) 55%, var(--color-primary-100));
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--tag-fill), var(--tag-fill)) padding-box,
+      conic-gradient(
+          from var(--tag-angle),
+          color-mix(in srgb, var(--color-primary-200) 50%, transparent) 0deg,
+          var(--color-primary-500) 60deg,
+          var(--color-primary-300) 110deg,
+          color-mix(in srgb, var(--color-primary-200) 50%, transparent) 180deg,
+          color-mix(in srgb, var(--color-primary-200) 50%, transparent) 360deg
+        )
+        border-box;
+    box-shadow: 0 0 0.875rem -0.125rem color-mix(in srgb, var(--color-primary-500) 22%, transparent);
+  }
+
+  /* Decorative grid lines (Figma "Frame 1000006757/58" pairs) -------------- */
+  .grid-line-v {
+    @apply pointer-events-none flex w-[4.5px];
+  }
+  .grid-line-v::before {
+    content: "";
+    @apply w-[1.5px] bg-linear-to-b from-white to-neutral-300;
+  }
+  .grid-line-v::after {
+    content: "";
+    @apply w-[3px] bg-linear-to-b from-transparent to-white;
+  }
+  .grid-line-h {
+    @apply pointer-events-none flex h-[4.5px] flex-col;
+  }
+  .grid-line-h::before {
+    content: "";
+    @apply h-[1.5px] bg-linear-to-r from-white to-neutral-300;
+  }
+  .grid-line-h::after {
+    content: "";
+    @apply h-[3px] bg-linear-to-r from-transparent to-white;
+  }
+  .grid-line-h.is-reverse::before {
+    @apply bg-linear-to-l;
+  }
+  .grid-line-h.is-reverse::after {
+    @apply bg-linear-to-l;
+  }
+  .grid-dot {
+    @apply pointer-events-none size-4 shrink-0 rounded-full border border-white bg-primary-100;
+  }
+
+  /* Utility */
+  .hide-mobile-portrait {
+    @apply max-sm:hidden;
+  }
+}
+
+/* ==========================================================================
+   Motion — transform/opacity only, toggled by a single IntersectionObserver
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+    transition:
+      opacity 0.9s var(--ease-out-soft),
+      transform 0.9s var(--ease-out-soft);
+    transition-delay: calc(var(--reveal-delay, 0) * 1ms);
+  }
+  .js [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Section tag border loop */
+@property --tag-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes tag-spin {
+  to {
+    --tag-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tag {
+    animation: tag-spin 4s linear infinite;
+  }
+}
+
+/* Animated gradient text (Hero › "Words to highlight"). Colours follow the CMS brand scale. */
+@layer components {
+  .text-gradient-animated {
+    background-image: linear-gradient(
+      90deg,
+      var(--color-primary-700, #175cd3),
+      var(--color-primary-400, #53b1fd),
+      #22d3ee,
+      var(--color-primary-600, #1570ef),
+      var(--color-primary-700, #175cd3)
+    );
+    background-size: 300% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    /* Own box: Chromium skips background-clip:text on inline spans inside transformed parents. */
+    display: inline-block;
+    /* Keep descenders (g, p) inside the painted box without shifting the line. */
+    padding-bottom: 0.1em;
+    margin-bottom: -0.1em;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .text-gradient-animated {
+      animation: text-gradient-shift 6s linear infinite;
+    }
+  }
+  @keyframes text-gradient-shift {
+    to {
+      background-position: 300% 0;
+    }
+  }
+}
+
+/* Title that fades out towards its last line (banner hero). Colours follow the CMS brand scale. */
+@layer components {
+  .text-gradient-fade {
+    background-image: linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--color-primary-800, #0f53c9) 0%, transparent) 10%,
+      var(--color-primary-950, #102a56) 81%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    /* Keep descenders inside the painted box. */
+    padding-bottom: 0.1em;
+    margin-bottom: -0.1em;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Rich text (CMS "Story" fields) — calm long-form reading.
+   ------------------------------------------------------------------ */
+@layer components {
+  .rich-text {
+    color: var(--color-neutral-700);
+    font-size: clamp(1.0625rem, 0.3vw + 1rem, 1.1875rem);
+    line-height: 1.75;
+    letter-spacing: -0.01em;
+  }
+  .rich-text > * + * {
+    margin-top: 1.25em;
+  }
+  .rich-text h2,
+  .rich-text h3,
+  .rich-text h4 {
+    color: var(--color-neutral-800);
+    font-weight: 500;
+    scroll-margin-top: 6rem;
+  }
+  .rich-text h2 {
+    margin-top: 2.6em;
+    font-size: clamp(1.75rem, 1.4vw + 1.2rem, 2.5rem);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
+  }
+  .rich-text h3 {
+    margin-top: 2em;
+    font-size: clamp(1.3rem, 0.6vw + 1.1rem, 1.625rem);
+    line-height: 1.35;
+    letter-spacing: -0.03em;
+  }
+  .rich-text h4 {
+    margin-top: 1.75em;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text h2 + *,
+  .rich-text h3 + *,
+  .rich-text h4 + * {
+    margin-top: 0.75em;
+  }
+  .rich-text strong {
+    color: var(--color-neutral-800);
+    font-weight: 600;
+  }
+  .rich-text a {
+    color: var(--color-primary-700);
+    text-decoration: underline;
+    text-decoration-color: var(--color-primary-200);
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 2px;
+    transition: text-decoration-color 0.3s var(--ease-out-soft);
+  }
+  .rich-text a:hover {
+    text-decoration-color: currentColor;
+  }
+  .rich-text ul,
+  .rich-text ol {
+    padding-left: 1.4em;
+  }
+  .rich-text ul {
+    list-style: none;
+  }
+  .rich-text ul > li {
+    position: relative;
+  }
+  .rich-text ul > li:not(.is-nested)::before {
+    content: '';
+    position: absolute;
+    left: -1.1em;
+    top: 0.72em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 2px;
+    background: var(--color-primary-500);
+    transform: rotate(45deg);
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text ol > li::marker {
+    color: var(--color-primary-600);
+    font-weight: 600;
+  }
+  .rich-text li + li {
+    margin-top: 0.5em;
+  }
+  .rich-text li.is-nested > ul,
+  .rich-text li.is-nested > ol {
+    margin-top: 0.5em;
+  }
+  .rich-text blockquote {
+    margin-block: 2em;
+    border-left: 3px solid var(--color-primary-500);
+    border-radius: 0 1rem 1rem 0;
+    background: var(--color-white, #fff);
+    padding: 1.5rem 1.75rem;
+    color: var(--color-neutral-800);
+    font-size: 1.2em;
+    line-height: 1.55;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+  }
+  .rich-text hr {
+    margin-block: 2.5em;
+    border: 0;
+    border-top: 1px solid var(--color-neutral-300);
+  }
+  .rich-text figure {
+    margin-block: 2.25em;
+  }
+  .rich-text figure img {
+    width: 100%;
+    height: auto;
+    border-radius: 1.25rem;
+  }
+  .rich-text figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-neutral-500);
+  }
+  .rich-text code {
+    border-radius: 0.375rem;
+    background: var(--color-primary-50);
+    padding: 0.1em 0.35em;
+    font-size: 0.9em;
+  }
+}

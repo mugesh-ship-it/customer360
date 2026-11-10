@@ -1,0 +1,169 @@
+---
+import Illustration from '../global/Illustration.astro';
+import SectionTag from '../global/SectionTag.astro';
+import GridDivider from '../global/GridDivider.astro';
+import cardShape from '../../assets/card-shape.svg?url';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'features'>;
+}
+const { block } = Astro.props;
+---
+
+<section class="section_features relative" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="features_header grid gap-8 pt-16 lg:grid-cols-[13.8rem_1fr] lg:gap-[5.2rem] lg:pt-[4.23rem]" data-reveal>
+        {block.intro && <p class="features_intro text-size-regular font-semibold text-ink lg:order-none lg:pt-[3.8rem]">{block.intro}</p>}
+        <div class="flex flex-col items-start gap-7 max-lg:-order-1">
+          <SectionTag text={block.tag} />
+          <h2 class="features_heading heading-style-h1 text-neutral-900">{block.heading}</h2>
+        </div>
+      </div>
+
+      <div class="features_list relative mt-12 grid justify-items-center gap-8 md:grid-cols-2 lg:mt-[5.09rem] lg:grid-cols-3 lg:gap-x-8 lg:gap-y-[8.19rem]">
+        <div class="features_axis grid-line-v absolute top-[40%] bottom-0 left-[calc(50%-2.25px)] max-lg:hidden" aria-hidden="true"></div>
+        {
+          block.items?.map((item, i) => (
+            <article
+              class="features_card group relative w-full max-w-[25.33rem]"
+              data-reveal
+              data-rise={i % 3 === 2 ? '' : undefined}
+              style={`--reveal-delay: ${(i % 3) * 100}`}
+            >
+              <div class="features_card-parallax relative" data-parallax={[0.04, 0.08, -0.02][i % 3]}>
+              <img src={cardShape} alt="" aria-hidden="true" class="features_card-shape absolute inset-0 size-full" width="405" height="520" />
+              <div class="features_card-inner relative flex aspect-[405/520] flex-col px-[10.5%] pt-[15.5%] pb-[12%]">
+                <h3 class="features_card-title heading-style-h3 max-w-[12.6rem] text-ink">{item.title}</h3>
+                <div class="features_card-visual flex flex-1 items-center justify-center py-4" data-parallax="0.03">
+                  <Illustration media={item.illustration} class="features_card-image w-[61%]" />
+                </div>
+                {item.description && <p class="features_card-text text-size-regular leading-6 font-medium text-neutral-600">{item.description}</p>}
+              </div>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+  <GridDivider class="mt-12 lg:mt-[3.73rem]" />
+</section>
+
+<script>
+  import { onScroll, reduceMotion } from '../../lib/scroll';
+
+  /**
+   * Desktop scroll motion for the cards.
+   *  - Parallax: each element drifts by (its distance from viewport centre × speed).
+   *  - Rise: the centre card's resting place is tucked up between the two cards above it,
+   *    and it glides up into that place from its original spot as it scrolls into view.
+   * Everything is measured once (and on width change), so scroll only writes transforms.
+   */
+  const section = document.querySelector<HTMLElement>('.section_features');
+  const els = [...(section?.querySelectorAll<HTMLElement>('[data-parallax]') ?? [])];
+  const desktop = window.matchMedia('(min-width: 64rem)');
+  const TUCK = 0.78; // centre card's top settles at this fraction of the side cards' height
+  const RISE_SPAN = 1.15; // scroll distance (× viewport height) the rise is spread over
+
+  type Item = { el: HTMLElement; speed: number; centre: number; rise: number; top: number };
+
+  if (section && els.length && !reduceMotion) {
+    let items: Item[] = [];
+    let vh = window.innerHeight;
+    let lastY = window.scrollY;
+    let lastW = 0;
+
+    const clear = () =>
+      els.forEach((el) => {
+        el.style.transform = '';
+        const card = el.closest<HTMLElement>('.features_card');
+        if (card) card.style.marginTop = '';
+      });
+
+    const measure = () => {
+      vh = window.innerHeight;
+      clear();
+      const y = window.scrollY;
+
+      // 1) pull each centre card up so it sits close to the pair above it
+      const rises = new Map<HTMLElement, number>();
+      section.querySelectorAll<HTMLElement>('.features_card[data-rise]').forEach((card) => {
+        const prev = [card.previousElementSibling, card.previousElementSibling?.previousElementSibling].filter(
+          (n): n is HTMLElement => n instanceof HTMLElement && n.classList.contains('features_card'),
+        );
+        if (!prev.length) return;
+        const top = card.getBoundingClientRect().top;
+        const target = Math.min(...prev.map((n) => n.getBoundingClientRect().top)) + Math.max(...prev.map((n) => n.offsetHeight)) * TUCK;
+        const gap = Math.max(0, top - target);
+        card.style.marginTop = `${-gap}px`;
+        rises.set(card, gap);
+      });
+
+      // 2) measure resting positions
+      items = els.map((el) => {
+        const r = el.getBoundingClientRect();
+        const card = el.closest<HTMLElement>('.features_card');
+        const own = el.classList.contains('features_card-parallax') && card ? rises.get(card) ?? 0 : 0;
+        return { el, speed: parseFloat(el.dataset.parallax || '0'), centre: r.top + y + r.height / 2, top: r.top + y, rise: own };
+      });
+      render(lastY);
+    };
+
+    const render = (y: number) => {
+      lastY = y;
+      if (!desktop.matches) return;
+      const mid = y + vh / 2;
+      for (const it of items) {
+        const d = it.centre - mid;
+        if (Math.abs(d) > vh * 1.5) continue; // far off-screen — skip
+        let offset = d * it.speed;
+        if (it.rise) {
+          // 0 when the card's resting top meets the viewport bottom → 1 a little over a screen later.
+          // Gentle ease-out (sine): moves evenly with the scroll, no fast middle.
+          const t = Math.min(1, Math.max(0, (y + vh - it.top) / (vh * RISE_SPAN)));
+          offset += it.rise * (1 - Math.sin((t * Math.PI) / 2));
+        }
+        it.el.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0)`;
+      }
+    };
+
+    const reset = () => {
+      if (!desktop.matches) {
+        lastW = 0;
+        return clear();
+      }
+      const w = section.clientWidth;
+      if (w === lastW) return; // our own margin changes resize the section — ignore those
+      lastW = w;
+      measure();
+    };
+
+    reset();
+    new ResizeObserver(reset).observe(section);
+    desktop.addEventListener('change', reset);
+    window.addEventListener('load', () => ((lastW = 0), reset()), { once: true });
+    onScroll(render);
+  }
+</script>
+
+<style>
+  .features_card-parallax,
+  .features_card-visual {
+    will-change: transform;
+  }
+
+  @media (min-width: 64rem) {
+    /* Zig-zag: 1st → left, 2nd → right, 3rd → centre on the next row (repeats) */
+    .features_card:nth-child(3n + 2) {
+      grid-column: 1;
+    }
+    .features_card:nth-child(3n + 3) {
+      grid-column: 3;
+    }
+    .features_card:nth-child(3n + 4) {
+      grid-column: 2;
+    }
+  }
+</style>

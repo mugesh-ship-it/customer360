@@ -1,0 +1,480 @@
+---
+import Button from '../global/Button.astro';
+import SectionTag from '../global/SectionTag.astro';
+import GridDivider from '../global/GridDivider.astro';
+import { linkAttrs, type BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'servicesWheel'>;
+}
+const { block } = Astro.props;
+
+/**
+ * Spiral "rose" wheel, drawn from geometry rather than exported SVGs so every
+ * slice shares one hub, one gap width and one corner radius.
+ *
+ * 8 slots of 45°, angles measured clockwise from 12 o'clock. Slot 3 (3 → 4:30
+ * o'clock) stays empty, under the text column. Slice radii step down evenly
+ * clockwise from the slice after the gap, giving the spiral from the design.
+ * CMS `services[i]` fills the i-th used slot, starting at the top-left slice.
+ *
+ * 3D: on hover the wheel tilts back (see the script). Each slice gets
+ * thickness from WALLS stacked copies of its outline below the top face; the
+ * hovered slice rises and its walls stretch down to the base.
+ */
+const SLOT_DEG = 45;
+const SLOT_STARTS = [-45, 0, 45, 135, 180, 225, 270]; // slot 3 (90°–135°) is the gap
+const R_MAX = 523; // largest slice (first after the gap)
+const R_MIN = 263; // smallest slice (last before the gap)
+const R_HUB = 52; // hub disc
+const R_IN = 60; // inner edge of every slice
+const GAP = 10; // space between neighbouring slices
+const CORNER = 14; // slice corner radius
+const LIFT = 14; // hover: how far a slice slides out from the hub
+const PAD = 40; // room for the drop shadow
+const WALLS = 10; // stacked layers that form each slice's side wall
+
+const rad = (deg: number) => (deg * Math.PI) / 180;
+const pt = (deg: number, r: number): [number, number] => [Math.sin(rad(deg)) * r, -Math.cos(rad(deg)) * r];
+const f = (n: number) => +n.toFixed(2);
+const P = ([x, y]: [number, number]) => `${f(x)} ${f(y)}`;
+
+/** Corner fillet where a slice edge (ray direction u, inward normal n, offset d) meets a circle of radius r. */
+function fillet(u: [number, number], n: [number, number], r: number, outer: boolean) {
+  const d = GAP / 2;
+  const rc = outer ? r - CORNER : r + CORNER;
+  const t = Math.sqrt(rc * rc - (d + CORNER) ** 2);
+  const cx = t * u[0] + (d + CORNER) * n[0];
+  const cy = t * u[1] + (d + CORNER) * n[1];
+  return {
+    onEdge: [t * u[0] + d * n[0], t * u[1] + d * n[1]] as [number, number],
+    onArc: [(cx * r) / rc, (cy * r) / rc] as [number, number],
+  };
+}
+
+/** Annular sector from a0 → a1 (clockwise) with rounded corners and a GAP/2 inset on both straight edges. */
+function slicePath(a0: number, a1: number, rOut: number) {
+  const uA: [number, number] = [Math.sin(rad(a0)), -Math.cos(rad(a0))];
+  const nA: [number, number] = [Math.cos(rad(a0)), Math.sin(rad(a0))];
+  const uB: [number, number] = [Math.sin(rad(a1)), -Math.cos(rad(a1))];
+  const nB: [number, number] = [-Math.cos(rad(a1)), -Math.sin(rad(a1))];
+  const aIn = fillet(uA, nA, R_IN, false);
+  const aOut = fillet(uA, nA, rOut, true);
+  const bOut = fillet(uB, nB, rOut, true);
+  const bIn = fillet(uB, nB, R_IN, false);
+  const c = CORNER;
+  return [
+    `M${P(aIn.onEdge)}`,
+    `L${P(aOut.onEdge)}`,
+    `A${c} ${c} 0 0 1 ${P(aOut.onArc)}`,
+    `A${rOut} ${rOut} 0 0 1 ${P(bOut.onArc)}`,
+    `A${c} ${c} 0 0 1 ${P(bOut.onEdge)}`,
+    `L${P(bIn.onEdge)}`,
+    `A${c} ${c} 0 0 1 ${P(bIn.onArc)}`,
+    `A${R_IN} ${R_IN} 0 0 0 ${P(aIn.onArc)}`,
+    `A${c} ${c} 0 0 1 ${P(aIn.onEdge)}`,
+    'Z',
+  ].join('');
+}
+
+// Radius: largest on the slice right after the gap (slot index 3 in SLOT_STARTS), shrinking clockwise.
+const radii = SLOT_STARTS.map((_, i) => {
+  const k = (i - 3 + SLOT_STARTS.length) % SLOT_STARTS.length;
+  return R_MAX - ((R_MAX - R_MIN) * k) / (SLOT_STARTS.length - 1);
+});
+
+// Bounding box of every slice (sampled along its outer arc) plus shadow padding.
+const xs: number[] = [-R_HUB, R_HUB];
+const ys: number[] = [-R_HUB, R_HUB];
+SLOT_STARTS.forEach((a0, i) => {
+  for (let a = a0; a <= a0 + SLOT_DEG; a += 1) {
+    const [x, y] = pt(a, radii[i]);
+    xs.push(x);
+    ys.push(y);
+  }
+});
+const vb = {
+  x: Math.floor(Math.min(...xs) - PAD),
+  y: Math.floor(Math.min(...ys) - PAD),
+  w: 0,
+  h: 0,
+};
+vb.w = Math.ceil(Math.max(...xs) + PAD) - vb.x;
+vb.h = Math.ceil(Math.max(...ys) + PAD) - vb.y;
+const viewBox = `${vb.x} ${vb.y} ${vb.w} ${vb.h}`;
+const pctX = (x: number) => f(((x - vb.x) / vb.w) * 100);
+const pctY = (y: number) => f(((y - vb.y) / vb.h) * 100);
+const hub = { x: pctX(0), y: pctY(0) };
+
+const services = (block.services ?? []).slice(0, SLOT_STARTS.length);
+const uid = Math.random().toString(36).slice(2, 8);
+
+/** Slice bounding box in wheel units, so each 3D layer is only as big as its slice. */
+function sliceBox(a0: number, a1: number, rOut: number) {
+  const px: number[] = [];
+  const py: number[] = [];
+  for (let a = a0; a <= a1 + 0.001; a += 1) {
+    for (const r of [R_IN, rOut]) {
+      const [x, y] = pt(a, r);
+      px.push(x);
+      py.push(y);
+    }
+  }
+  const x = Math.floor(Math.min(...px)) - 2;
+  const y = Math.floor(Math.min(...py)) - 2;
+  const w = Math.ceil(Math.max(...px)) + 2 - x;
+  const h = Math.ceil(Math.max(...py)) + 2 - y;
+  return {
+    viewBox: `${x} ${y} ${w} ${h}`,
+    style: `left: ${pctX(x)}%; top: ${pctY(y)}%; width: ${f((w / vb.w) * 100)}%; height: ${f((h / vb.h) * 100)}%;`,
+  };
+}
+
+const slices = services.map((service, i) => {
+  const a0 = SLOT_STARTS[i];
+  const mid = a0 + SLOT_DEG / 2;
+  const r = radii[i];
+  const [lx, ly] = pt(mid, R_IN + (r - R_IN) * 0.6);
+  const [dx, dy] = pt(mid, LIFT);
+  return {
+    service,
+    attrs: linkAttrs(service),
+    d: slicePath(a0, a0 + SLOT_DEG, r),
+    box: sliceBox(a0, a0 + SLOT_DEG, r),
+    r,
+    label: { x: pctX(lx), y: pctY(ly) },
+    // Hover slide as a % of the (container-sized) layer
+    lift: { x: f((dx / vb.w) * 100), y: f((dy / vb.h) * 100) },
+  };
+});
+
+const walls = Array.from({ length: WALLS }, (_, k) => k + 1);
+const hubSize = { w: f(((R_HUB * 2) / vb.w) * 100) };
+---
+
+<section class="section_services relative" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="services_component relative pt-16 lg:pt-[5rem]">
+        <div class="services_header flex flex-col items-start gap-7" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="services_heading heading-style-h1 max-w-[63rem] text-neutral-900">{block.heading}</h2>
+        </div>
+
+        <div class="services_body relative mt-10 lg:mt-0">
+          <div
+            class="services_aside flex flex-col items-start gap-9 lg:absolute lg:top-[2.8rem] lg:right-0 lg:z-10 lg:w-[21rem]"
+            data-reveal
+            style="--reveal-delay: 100"
+          >
+            {block.description && <p class="text-size-regular font-semibold text-ink">{block.description}</p>}
+            <Button link={block.button} />
+          </div>
+
+          <!-- Accessible list of services (the wheel is a visual duplicate) -->
+          <ul class="sr-only">
+            {services.map((s) => <li>{s.url ? <a href={s.url}>{s.label}</a> : s.label}</li>)}
+          </ul>
+
+          <div
+            class="services_wheel relative mt-12 lg:mt-[5.7rem]"
+            aria-hidden="true"
+            data-reveal
+            style={`--reveal-delay: 150; --wheel-aspect: ${vb.w} / ${vb.h}; --hub-x: ${hub.x}%; --hub-y: ${hub.y}%; --hub-frac: ${hub.x / 100}; --walls: ${WALLS};`}
+          >
+            <!-- Shared filter for every slice -->
+            <svg class="absolute size-0" focusable="false">
+              <defs>
+                <filter id={`wheel-shadow-${uid}`} x="-25%" y="-25%" width="150%" height="160%" color-interpolation-filters="sRGB">
+                  <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.09" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.06" />
+                </filter>
+              </defs>
+            </svg>
+
+            <div class="wheel_tilt">
+              {
+                slices.map(({ service, attrs, d, box, r, label, lift }, i) => {
+                  const Tag = attrs ? 'a' : 'div';
+                  return (
+                  <div class:list={['wheel_layer', service.highlighted && 'is-highlighted']} style={`--i: ${i}`}>
+                    {/* Visual: rises/slides on hover, never receives the pointer */}
+                    <div class="wheel_visual" style={`--lift-x: ${lift.x}%; --lift-y: ${lift.y}%;`}>
+                      {walls.map((k) => (
+                        <svg class="wheel_wall" viewBox={box.viewBox} style={`${box.style} --k: ${k};`} focusable="false">
+                          <path d={d} />
+                        </svg>
+                      ))}
+                      <svg class="wheel_face" viewBox={box.viewBox} style={box.style} focusable="false">
+                        <defs>
+                          <radialGradient id={`idle-${i}-${uid}`} gradientUnits="userSpaceOnUse" cx="0" cy="0" r={r}>
+                            <stop offset="0.1" stop-color="#e4e4e4" />
+                            <stop offset="1" stop-color="#fcfcfc" />
+                          </radialGradient>
+                          <radialGradient id={`active-${i}-${uid}`} gradientUnits="userSpaceOnUse" cx="0" cy="0" r={r}>
+                            <stop offset="0.1" style="stop-color: var(--color-primary-200)" />
+                            <stop offset="1" style="stop-color: var(--color-primary-50)" />
+                          </radialGradient>
+                        </defs>
+                        <g filter={`url(#wheel-shadow-${uid})`}>
+                          <path d={d} fill={`url(#idle-${i}-${uid})`} />
+                          <path class="wheel_fill-active" d={d} fill={`url(#active-${i}-${uid})`} />
+                        </g>
+                        <path class="wheel_edge" d={d} />
+                      </svg>
+                      <p class="wheel_label" style={`left: ${label.x}%; top: ${label.y}%;`}>
+                        <span>{service.label}</span>
+                      </p>
+                    </div>
+                    {/* Hit area: stays put (so the hover can't slide out from under the pointer) and covers half the gap on each side */}
+                    <Tag {...attrs} tabindex={attrs ? -1 : undefined} class="wheel_hit">
+                      <svg class="absolute inset-0 size-full overflow-visible" viewBox={viewBox} focusable="false">
+                        <path d={d} stroke-width={GAP + 2} stroke-linejoin="round" />
+                      </svg>
+                    </Tag>
+                  </div>
+                  );
+                })
+              }
+
+              <!-- Hub: a short cylinder with a sphere that always faces the viewer -->
+              <div class="wheel_hub" style={`left: ${hub.x}%; top: ${hub.y}%; width: ${hubSize.w}%;`}>
+                {walls.slice(0, 6).map((k) => <span class="wheel_hub-wall" style={`--k: ${k}`} />)}
+                <span class="wheel_hub-top" />
+                <span class="wheel_hub-sphere" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <GridDivider class="mt-12 lg:mt-[6.05rem]" />
+</section>
+
+<script>
+  /**
+   * 3D tilt. When the mouse enters the wheel it eases back into a perspective
+   * view (BASE_TILT) and then follows the cursor a little (FOLLOW). Everything
+   * runs through one smoothed loop, so there are no jumps between states.
+   * Mouse only; reduced-motion users keep the flat wheel.
+   */
+  const BASE_TILT = 50; // degrees the wheel leans back while hovered
+  const FOLLOW = 7; // extra degrees following the cursor
+  const EASE = 0.08; // 0–1, lower = softer
+
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<HTMLElement>('.services_wheel').forEach((wheel) => {
+      const tilt = wheel.querySelector<HTMLElement>('.wheel_tilt');
+      if (!tilt) return;
+      let target = { x: 0, y: 0, depth: 0 };
+      const current = { x: 0, y: 0, depth: 0 };
+      let frame = 0;
+
+      const tick = () => {
+        current.x += (target.x - current.x) * EASE;
+        current.y += (target.y - current.y) * EASE;
+        current.depth += (target.depth - current.depth) * EASE;
+        tilt.style.setProperty('--rx', `${current.x.toFixed(3)}deg`);
+        tilt.style.setProperty('--ry', `${current.y.toFixed(3)}deg`);
+        wheel.style.setProperty('--depth', current.depth.toFixed(4));
+        const settled =
+          Math.abs(target.x - current.x) < 0.01 &&
+          Math.abs(target.y - current.y) < 0.01 &&
+          Math.abs(target.depth - current.depth) < 0.001;
+        frame = settled ? 0 : requestAnimationFrame(tick);
+      };
+      const run = () => {
+        if (!frame) frame = requestAnimationFrame(tick);
+      };
+
+      wheel.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'mouse') return;
+        const r = wheel.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5; // -0.5 … 0.5
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        target = { x: BASE_TILT - py * 2 * FOLLOW, y: px * 2 * FOLLOW, depth: 1 };
+        run();
+      });
+      wheel.addEventListener('pointerleave', () => {
+        target = { x: 0, y: 0, depth: 0 };
+        run();
+      });
+    });
+  }
+</script>
+
+<style>
+  .services_wheel {
+    --depth: 0; /* 0 = flat, 1 = tilted 3D view (set by the script) */
+    aspect-ratio: var(--wheel-aspect);
+    container-type: inline-size;
+    perspective: 1600px;
+    perspective-origin: var(--hub-x) var(--hub-y);
+    /* Keep the hub on the page's centre axis like the Figma grid */
+    width: min(51.75rem, 100%);
+    margin-left: max(0px, calc(50% - min(51.75rem, 100%) * var(--hub-frac)));
+  }
+
+  .wheel_tilt {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform-origin: var(--hub-x) var(--hub-y);
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+
+  /* Entrance: slices fan out from the hub one after another */
+  .wheel_layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    transform-origin: var(--hub-x) var(--hub-y);
+  }
+
+  /* ---------- Slice visual (top face + side walls) ---------- */
+  .wheel_visual {
+    --wall: 2px; /* gap between wall layers (slice thickness = --walls × --wall); hidden behind the face when flat */
+    --rise: 0px;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform-style: preserve-3d;
+    transform: translateZ(var(--rise));
+    transition:
+      translate 0.6s var(--ease-out-soft),
+      transform 0.6s var(--ease-out-soft);
+  }
+  .wheel_face,
+  .wheel_wall {
+    position: absolute;
+    overflow: visible;
+  }
+  .wheel_wall {
+    transform: translateZ(calc(var(--k) * var(--wall) * -1));
+    transition: transform 0.6s var(--ease-out-soft);
+  }
+  .wheel_wall path {
+    /* darker towards the base */
+    fill: color-mix(in srgb, #dedfe7, #bfc1cf calc(var(--k) / var(--walls) * 100%));
+    transition: fill 0.5s var(--ease-out-soft);
+  }
+  .wheel_fill-active {
+    opacity: 0;
+    transition: opacity 0.5s var(--ease-out-soft);
+  }
+  .wheel_edge {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .wheel_label {
+    position: absolute;
+    translate: -50% -50%;
+    transform: translateZ(1px);
+    margin: 0;
+    width: max-content;
+    max-width: 7em;
+    text-wrap: balance;
+    text-align: center;
+    font-size: max(0.625rem, 2.3cqi);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-neutral-600);
+    transition: color 0.5s var(--ease-out-soft);
+  }
+
+  /* ---------- Static, invisible hover/click target ---------- */
+  .wheel_hit {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+  }
+  .wheel_hit path {
+    fill: transparent;
+    stroke: transparent;
+    pointer-events: all;
+    cursor: pointer;
+  }
+
+  /* ---------- Active: CMS highlight or hover ---------- */
+  .wheel_layer.is-highlighted .wheel_fill-active,
+  .wheel_layer:hover .wheel_fill-active {
+    opacity: 1;
+  }
+  .wheel_layer.is-highlighted .wheel_label,
+  .wheel_layer:hover .wheel_label {
+    color: var(--color-primary-700);
+  }
+  .wheel_layer.is-highlighted .wheel_wall path,
+  .wheel_layer:hover .wheel_wall path {
+    fill: color-mix(in srgb, var(--color-primary-100), var(--color-primary-300) calc(var(--k) / var(--walls) * 100%));
+  }
+  /* Hovered slice slides out and rises; its walls stretch back down to the base */
+  .wheel_layer:hover .wheel_visual {
+    --rise: 44px;
+    --wall: calc(2px + var(--rise) / var(--walls));
+    translate: var(--lift-x) var(--lift-y);
+  }
+
+  /* While hovering another slice, the CMS highlight steps back */
+  .services_wheel:has(.wheel_layer:hover) .wheel_layer.is-highlighted:not(:hover) .wheel_fill-active {
+    opacity: 0;
+  }
+  .services_wheel:has(.wheel_layer:hover) .wheel_layer.is-highlighted:not(:hover) .wheel_label {
+    color: var(--color-neutral-600);
+  }
+  .services_wheel:has(.wheel_layer:hover) .wheel_layer.is-highlighted:not(:hover) .wheel_wall path {
+    fill: color-mix(in srgb, #dedfe7, #bfc1cf calc(var(--k) / var(--walls) * 100%));
+  }
+
+  /* ---------- Hub ---------- */
+  .wheel_hub {
+    position: absolute;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    transform-style: preserve-3d;
+    transform: translateZ(calc(4px + var(--depth) * 10px));
+    pointer-events: none;
+  }
+  .wheel_hub > span {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+  }
+  .wheel_hub-wall {
+    background: color-mix(in srgb, #dedfe7, #bfc1cf calc(var(--k) / 6 * 100%));
+    transform: translateZ(calc(var(--k) * -3px));
+  }
+  .wheel_hub-top {
+    background: var(--color-page);
+    border: 3px solid #fff;
+    box-shadow:
+      inset 0 2px 6px rgb(15 23 42 / 0.08),
+      0 6px 16px rgb(15 23 42 / 0.08);
+  }
+  /* Billboard: undo the wheel's tilt so the sphere always faces the viewer */
+  .wheel_hub > .wheel_hub-sphere {
+    inset: 32%;
+    background: radial-gradient(circle at 35% 30%, #fff 0%, var(--color-primary-200) 28%, var(--color-primary-500) 70%, var(--color-primary-700) 100%);
+    box-shadow: 0 4px 10px rgb(21 112 239 / 0.35);
+    transform: translateZ(calc(2px + var(--depth) * 16px)) rotateY(calc(var(--ry, 0deg) * -1)) rotateX(calc(var(--rx, 0deg) * -1));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .wheel_layer {
+      transition:
+        opacity 0.8s var(--ease-out-soft),
+        transform 0.9s var(--ease-out-soft);
+      transition-delay: calc(250ms + var(--i) * 70ms);
+    }
+    :global(.js) .services_wheel:not(.is-revealed) .wheel_layer {
+      opacity: 0;
+      transform: scale(0.6) rotate(-12deg);
+    }
+  }
+</style>

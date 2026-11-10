@@ -1,0 +1,305 @@
+---
+/**
+ * Animated CMS illustration.
+ *
+ * SVG uploads are inlined so their parts can move; anything else falls back to
+ * a plain <CmsImage>. Motion (all CSS + one small shared script, see below):
+ *  - entrance: rises in from a slight blur, then the blue accents "power on" in sequence
+ *  - idle: slow float with a breathing ground shadow; blue LEDs / data dots twinkle out of step
+ *  - hover (on the surrounding card, `.group`): 3D tilt toward the cursor, higher lift, accent glow
+ * Animations pause off-screen and are reduced to a fade for prefers-reduced-motion.
+ */
+import CmsImage from './CmsImage.astro';
+import { mediaUrl, populated, type Media } from '../../lib/cms';
+import { scopeSvgIds } from '../../lib/svg';
+
+interface Props {
+  media: number | Media | null | undefined;
+  class?: string;
+  style?: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  decorative?: boolean;
+}
+
+const { media, class: className, style, sizes, loading, decorative = false } = Astro.props;
+const doc = populated(media);
+const src = mediaUrl(doc);
+const isSvg = !!doc && (doc.mimeType === 'image/svg+xml' || /\.svg$/i.test(doc.filename ?? ''));
+
+/** Brand blues used for LEDs, data dots and screen glyphs in the isometric set. */
+const ACCENT = /^#(1FB6FF|2E90FA|53B1FD|84CAFF)$/i;
+
+let svg: string | null = null;
+let aspect: string | null = null;
+if (isSvg && src) {
+  const raw = await loadSvg(src, String(doc?.updatedAt ?? ''));
+  if (raw) {
+    const prefix = `ill${doc?.id ?? ''}-${Math.random().toString(36).slice(2, 7)}`;
+    let out = scopeSvgIds(raw, prefix);
+
+    // Size from CSS, keep the viewBox for proportions.
+    const vb = out.match(/viewBox="([\d.\s-]+)"/)?.[1]?.trim().split(/\s+/).map(Number);
+    if (vb?.length === 4) aspect = `${vb[2]} / ${vb[3]}`;
+    out = out.replace(/<svg\b([^>]*)>/, (_m, attrs: string) => {
+      const cleaned = attrs.replace(/\s(width|height|style|class)="[^"]*"/g, '');
+      return `<svg${cleaned} class="ill_svg" focusable="false" aria-hidden="true">`;
+    });
+
+    // Tag accent shapes so CSS can light them up; spread delays so they twinkle out of step.
+    let n = 0;
+    out = out.replace(/<(path|circle|rect|ellipse)\b([^>]*?)\sfill="(#[0-9a-f]{3,6})"/gi, (m, tag: string, attrs: string, fill: string) => {
+      if (!ACCENT.test(fill) || /\sclass="/.test(attrs)) return m;
+      const i = n++;
+      const delay = ((i * 0.618) % 1) * 3.2; // golden-ratio spread → organic rhythm
+      const dur = 2.6 + ((i * 0.37) % 1) * 1.6;
+      return `<${tag}${attrs} fill="${fill}" class="ill_accent" style="--i:${i};--tw-delay:${delay.toFixed(2)}s;--tw-dur:${dur.toFixed(2)}s"`;
+    });
+
+    // Drop unreferenced Figma group ids to keep the HTML lean.
+    const referenced = new Set([...out.matchAll(/(?:url\(#|href="#)([^)"]+)/g)].map((m) => m[1]));
+    out = out.replace(/\sid="([^"]+)"/g, (m, id: string) => (referenced.has(id) ? m : '')).replace(/>\s+</g, '><');
+    svg = out;
+  }
+}
+
+/** Fetch an SVG once per process (keyed by URL + updatedAt so CMS edits still show up). */
+async function loadSvg(url: string, version: string): Promise<string | null> {
+  const g = globalThis as typeof globalThis & { __illCache?: Map<string, Promise<string | null>> };
+  const cache = (g.__illCache ??= new Map());
+  const key = `${url}#${version}`;
+  if (!cache.has(key)) {
+    cache.set(
+      key,
+      fetch(url, { signal: AbortSignal.timeout(8000) })
+        .then((r) => (r.ok ? r.text() : null))
+        .then((t) => (t && t.includes('<svg') ? t : null))
+        .catch(() => {
+          cache.delete(key);
+          return null;
+        }),
+    );
+  }
+  return cache.get(key)!;
+}
+
+const label = decorative ? undefined : doc?.alt || undefined;
+---
+
+{
+  svg ? (
+    <span
+      class:list={['ill', className]}
+      style={[aspect && `aspect-ratio: ${aspect}`, style].filter(Boolean).join('; ')}
+      data-ill
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : 'true'}
+    >
+      <span class="ill_shadow" aria-hidden="true" />
+      <span class="ill_tilt">
+        <span class="ill_float" set:html={svg} />
+      </span>
+    </span>
+  ) : (
+    <CmsImage media={media} class={className} style={style} sizes={sizes} loading={loading} decorative={decorative} />
+  )
+}
+
+<script>
+  /**
+   * One observer + one pointer handler per card host for every illustration on the page.
+   * - `.is-in`  → entrance has played (stays)
+   * - `.is-live` → on screen; idle animations run only while this is set
+   * - hover tilt: eased toward the cursor in a rAF loop, written as --ill-rx/--ill-ry
+   */
+  const items = document.querySelectorAll<HTMLElement>('[data-ill]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (items.length) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const el = e.target as HTMLElement;
+          if (e.isIntersecting) el.classList.add('is-in');
+          el.classList.toggle('is-live', e.isIntersecting);
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px' },
+    );
+    items.forEach((el) => io.observe(el));
+
+    if (!reduce && finePointer) {
+      const MAX = 10; // degrees
+      const EASE = 0.12;
+      items.forEach((el) => {
+        const host = el.closest<HTMLElement>('.group') ?? el;
+        let tx = 0,
+          ty = 0,
+          cx = 0,
+          cy = 0,
+          raf = 0;
+        const tick = () => {
+          cx += (tx - cx) * EASE;
+          cy += (ty - cy) * EASE;
+          el.style.setProperty('--ill-rx', `${cx.toFixed(3)}deg`);
+          el.style.setProperty('--ill-ry', `${cy.toFixed(3)}deg`);
+          raf = Math.abs(tx - cx) < 0.01 && Math.abs(ty - cy) < 0.01 ? 0 : requestAnimationFrame(tick);
+        };
+        const run = () => {
+          if (!raf) raf = requestAnimationFrame(tick);
+        };
+        host.addEventListener('pointerenter', () => el.classList.add('is-hover'));
+        host.addEventListener('pointermove', (e) => {
+          const r = el.getBoundingClientRect();
+          const px = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+          const py = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+          tx = -py * MAX;
+          ty = px * MAX;
+          run();
+        });
+        host.addEventListener('pointerleave', () => {
+          el.classList.remove('is-hover');
+          tx = ty = 0;
+          run();
+        });
+      });
+    }
+  }
+</script>
+
+<style is:global>
+  .ill {
+    --ill-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    display: block;
+    perspective: 900px;
+  }
+  .ill_tilt,
+  .ill_float {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .ill_tilt {
+    transform: rotateX(var(--ill-rx, 0deg)) rotateY(var(--ill-ry, 0deg));
+    transform-style: preserve-3d;
+  }
+  .ill_svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  /* Soft ground shadow that breathes with the float */
+  .ill_shadow {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: -2%;
+    height: 9%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(15 23 42 / 0.16), transparent);
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* ---------- Entrance ---------- */
+    .js .ill .ill_float {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0) scale(0.94);
+      filter: blur(6px);
+      transition:
+        opacity 0.9s var(--ill-ease),
+        transform 1.1s var(--ill-ease),
+        filter 0.9s var(--ill-ease);
+    }
+    .js .ill .ill_shadow {
+      opacity: 0;
+      transform: scale(0.6);
+      transition:
+        opacity 1s var(--ill-ease) 0.15s,
+        transform 1.1s var(--ill-ease) 0.15s;
+    }
+    .js .ill .ill_accent {
+      opacity: 0;
+      transition: opacity 0.5s var(--ill-ease);
+      transition-delay: calc(0.55s + var(--i) * 0.06s);
+    }
+    .js .ill.is-in .ill_float {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+    .js .ill.is-in .ill_shadow {
+      opacity: 1;
+      transform: none;
+    }
+    .js .ill.is-in .ill_accent {
+      opacity: 1;
+    }
+
+    /* ---------- Idle (only while on screen) ---------- */
+    .ill.is-in.is-live .ill_float {
+      animation: ill-float 5.6s ease-in-out infinite;
+    }
+    .ill.is-in.is-live .ill_shadow {
+      animation: ill-shadow 5.6s ease-in-out infinite;
+    }
+    .ill.is-in.is-live .ill_accent {
+      animation: ill-twinkle var(--tw-dur) ease-in-out var(--tw-delay) infinite;
+    }
+
+    /* ---------- Hover (on the card) ---------- */
+    .ill .ill_tilt {
+      transition: translate 0.7s var(--ill-ease), scale 0.7s var(--ill-ease);
+    }
+    .ill.is-hover .ill_tilt {
+      translate: 0 -8px;
+      scale: 1.04;
+    }
+    .ill.is-hover .ill_shadow {
+      scale: 0.82;
+      opacity: 0.65;
+    }
+    .ill.is-hover .ill_accent {
+      filter: drop-shadow(0 0 3px rgb(31 182 255 / 0.85));
+    }
+  }
+
+  /* Uses the `translate` property so it never fights the entrance/tilt transforms */
+  @keyframes ill-float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -7px;
+    }
+  }
+  @keyframes ill-shadow {
+    0%,
+    100% {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scaleX(0.86);
+      opacity: 0.7;
+    }
+  }
+  @keyframes ill-twinkle {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    45% {
+      opacity: 0.3;
+    }
+    60% {
+      opacity: 1;
+    }
+  }
+</style>

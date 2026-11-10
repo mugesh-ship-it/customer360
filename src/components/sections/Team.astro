@@ -1,0 +1,74 @@
+---
+/** "Team grid" — title, text + button, and notched photo cards that fill rows from the right. */
+import Button from '../global/Button.astro';
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import mask from '../../assets/team-card-mask.svg?url';
+import { sectionBg } from '../../lib/sections';
+import { populated, type BlockOf, type TeamProfile } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'team'>;
+}
+const { block } = Astro.props;
+const members = (block.members ?? []).map((m) => populated<TeamProfile>(m)).filter((m): m is TeamProfile => Boolean(m));
+---
+
+<section class:list={['section_team', sectionBg(block.background)]} id={block.anchorId || undefined} style={`--team-mask: url("${mask}")`}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="team_component pt-16 pb-20 lg:pt-16 lg:pb-24">
+        <div class="team_header flex flex-col gap-10 lg:gap-0">
+          <div class="team_title flex flex-col items-start gap-7" data-reveal>
+            <SectionTag text={block.tag} />
+            <h2 class="team_heading heading-style-h1 max-w-[50rem] text-neutral-800">{block.heading}</h2>
+          </div>
+          {
+            (block.description || block.button?.label) && (
+              <div class="team_aside flex flex-col items-start gap-9 lg:ml-auto lg:w-[27.625rem]" data-reveal style="--reveal-delay: 100">
+                {block.description && <p class="team_text text-size-regular font-medium text-neutral-600">{block.description}</p>}
+                <Button link={block.button} />
+              </div>
+            )
+          }
+        </div>
+
+        <ul class="team_list mt-12 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:mt-[3.31rem] lg:ml-auto lg:flex lg:max-w-[59.75rem] lg:flex-wrap lg:justify-end lg:gap-x-7 lg:gap-y-[3.1rem]">
+          {
+            members.map((m, i) => (
+              <li class="team_card group relative flex flex-col gap-4 lg:block lg:aspect-[300/380] lg:w-[18.75rem]" data-reveal style={`--reveal-delay: ${(i % 3) * 100}`}>
+                <div class="team_photo relative aspect-[300/380] overflow-hidden rounded-2xl lg:absolute lg:inset-0 lg:aspect-auto lg:rounded-none">
+                  <CmsImage
+                    media={m.photo}
+                    class="team_image size-full object-cover transition-transform duration-700 ease-out-soft group-hover:scale-[1.04]"
+                    sizes="(min-width: 64rem) 300px, 50vw"
+                  />
+                </div>
+                <div class="team_meta flex flex-col gap-2 lg:absolute lg:top-[88.9%] lg:left-0 lg:max-w-[60%] lg:gap-3">
+                  {m.linkedin ? (
+                    <a href={m.linkedin} target="_blank" rel="noopener noreferrer" class="team_name text-[clamp(1rem,1.2vw+0.6rem,1.5rem)] leading-none font-semibold tracking-[-0.04em] text-neutral-600 hover:text-primary-700">
+                      {m.name}
+                    </a>
+                  ) : (
+                    <p class="team_name text-[clamp(1rem,1.2vw+0.6rem,1.5rem)] leading-none font-semibold tracking-[-0.04em] text-neutral-600">{m.name}</p>
+                  )}
+                  {m.role && <p class="team_role text-size-small leading-4 font-medium text-muted lg:text-base">{m.role}</p>}
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Notched photo shape (Figma "Union"): name and role sit in the cut-out corner. */
+  @media (min-width: 64rem) {
+    .team_photo {
+      -webkit-mask: var(--team-mask) center / 100% 100% no-repeat;
+      mask: var(--team-mask) center / 100% 100% no-repeat;
+    }
+  }
+</style>

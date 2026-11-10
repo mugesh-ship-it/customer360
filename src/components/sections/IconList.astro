@@ -1,0 +1,76 @@
+---
+/**
+ * "Icon list (two columns)" — e.g. Service detail › The impact.
+ * Points fill the left column first, then the right (DOM order = reading order on mobile).
+ */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'iconList'>;
+}
+const { block } = Astro.props;
+const items = block.items ?? [];
+const rows = Math.ceil(items.length / 2);
+---
+
+<section class="section_icon-list relative isolate" id={block.anchorId || undefined}>
+  <div class="icon-list_background pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[49rem] overflow-hidden" aria-hidden="true">
+    <div class="icon-list_glow absolute top-[31%] left-1/2 h-[40rem] w-[110rem] max-w-[200vw] -translate-x-1/2"></div>
+    <CmsImage media={block.backgroundRight} class="absolute top-[13%] left-[54.6%] h-[83.5%] w-[68%] max-w-none object-cover opacity-50" sizes="70vw" decorative />
+    <CmsImage media={block.backgroundLeft} class="absolute top-0 -left-[37.2%] h-full w-[81.4%] max-w-none object-cover opacity-50" sizes="80vw" decorative />
+  </div>
+
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="icon-list_component pt-16 lg:pt-[8.3rem]">
+        <div class="icon-list_header flex flex-col items-center gap-6" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="icon-list_heading heading-style-h1 text-align-center max-w-[48.2rem] text-neutral-800 lg:leading-[1.25]">{block.heading}</h2>
+        </div>
+
+        <ul
+          class="icon-list_list mt-12 grid gap-10 lg:mt-[9.2rem] lg:grid-flow-col lg:grid-cols-[repeat(2,minmax(0,31.5rem))] lg:grid-rows-[repeat(var(--rows),auto)] lg:justify-center lg:gap-x-[8.75rem] lg:gap-y-20"
+          style={`--rows: ${rows}`}
+        >
+          {
+            items.map((item, i) => (
+              <li class="icon-list_item group flex items-start gap-6 border-b border-neutral-300 pb-10 lg:gap-10" data-reveal style={`--reveal-delay: ${(i % rows) * 80}`}>
+                <span class="icon-list_icon flex w-12 shrink-0 justify-center lg:w-15">
+                  <CmsImage media={item.icon} class="h-auto w-full max-w-15 transition-transform duration-500 ease-out-soft group-hover:-translate-y-1" sizes="60px" decorative />
+                </span>
+                <div class="icon-list_body flex flex-col gap-4 border-l-[0.5px] border-neutral-400 pl-6 text-neutral-700 lg:gap-9 lg:pl-10">
+                  <h3 class="icon-list_title heading-style-h3">{item.title}</h3>
+                  {item.description && <p class="icon-list_text text-size-regular font-medium">{item.description}</p>}
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+
+        <div class="icon-list_axis flex flex-col items-center gap-4 pt-10 max-lg:hidden" aria-hidden="true">
+          <div class="grid-line-v h-[4.5rem]"></div>
+          <div class="grid-dot"></div>
+          <div class="grid-line-v h-[4.5rem] rotate-180"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Clouds dissolve into the page at the top and bottom instead of ending on a hard edge. */
+  .icon-list_background {
+    mask-image: linear-gradient(180deg, transparent, #000 14%, #000 62%, transparent);
+  }
+  /* Figma's blurred ellipse, as a plain radial gradient on the brand tokens. */
+  .icon-list_glow {
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-primary-300) 55%, transparent),
+      color-mix(in srgb, var(--color-primary-200) 25%, transparent) 55%,
+      transparent
+    );
+  }
+</style>

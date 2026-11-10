@@ -1,0 +1,107 @@
+---
+/**
+ * "Icon cards (centred title)" — e.g. Service detail › Strategic Foundation.
+ * The notched card outline is built from rounded boxes (no SVG), so it keeps a
+ * crisp 100px notch at any card width and its colours follow the brand tokens.
+ */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import { sectionBg } from '../../lib/sections';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'iconCards'>;
+}
+const { block } = Astro.props;
+---
+
+<section class:list={['section_icon-cards', sectionBg(block.background)]} id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="icon-cards_component flex flex-col gap-12 py-16 lg:gap-[7.5rem] lg:py-[6.25rem]">
+        <div class="icon-cards_header flex flex-col items-center gap-6" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="icon-cards_heading heading-style-h1 text-align-center max-w-[40.8rem] text-neutral-800 lg:leading-[1.25]">{block.heading}</h2>
+        </div>
+
+        <ul class="icon-cards_list grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {
+            block.cards?.map((card, i) => (
+              <li class="icon-cards_card group relative flex min-h-[20.2rem] flex-col justify-end px-8 pt-[8.5rem] pb-10 lg:px-10" data-reveal style={`--reveal-delay: ${(i % 3) * 100}`}>
+                <span class="icon-cards_shape" aria-hidden="true">
+                  <span class="is-a" /><span class="is-b" /><span class="is-fillet" />
+                  <span class="is-a is-fill" /><span class="is-b is-fill" /><span class="is-fillet is-fill" />
+                </span>
+                <span class="icon-cards_badge absolute top-0 left-0 flex size-20 items-center justify-center rounded-full border-2 border-primary-500 bg-page">
+                  <CmsImage media={card.icon} class="icon-cards_icon h-auto max-h-9 w-auto max-w-9 transition-transform duration-500 ease-out-soft group-hover:scale-110" sizes="36px" decorative />
+                </span>
+                <h3 class="icon-cards_title heading-style-h3 relative text-neutral-700">{card.title}</h3>
+                {card.description && <p class="icon-cards_text text-size-regular relative mt-6 text-neutral-600">{card.description}</p>}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .icon-cards_shape {
+    --notch: 6.25rem; /* 100px square cut-out holding the badge */
+    --radius: 1.5rem;
+    --stroke: 2px;
+    --edge: var(--color-primary-200);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: translate 0.5s var(--ease-out-soft);
+  }
+  .icon-cards_shape > span {
+    position: absolute;
+    background: var(--edge);
+    border-radius: var(--radius);
+  }
+  /* Outer outline (edge colour) */
+  .icon-cards_shape .is-a {
+    inset: 0 0 0 var(--notch);
+  }
+  .icon-cards_shape .is-b {
+    inset: var(--notch) 0 0 0;
+  }
+  /* Rounded inner corner of the notch */
+  .icon-cards_shape .is-fillet {
+    top: calc(var(--notch) - var(--radius));
+    left: calc(var(--notch) - var(--radius));
+    width: var(--radius);
+    height: var(--radius);
+    border-radius: 0;
+    background: radial-gradient(circle at 0 0, transparent var(--radius), var(--edge) calc(var(--radius) + 0.5px));
+  }
+  /* White fill, inset by the stroke width */
+  .icon-cards_shape .is-fill {
+    --edge: var(--color-white, #fff);
+    border-radius: calc(var(--radius) - var(--stroke));
+  }
+  .icon-cards_shape .is-a.is-fill {
+    inset: var(--stroke) var(--stroke) var(--stroke) calc(var(--notch) + var(--stroke));
+  }
+  .icon-cards_shape .is-b.is-fill {
+    inset: calc(var(--notch) + var(--stroke)) var(--stroke) var(--stroke) var(--stroke);
+  }
+  .icon-cards_shape .is-fillet.is-fill {
+    width: calc(var(--radius) + var(--stroke));
+    height: calc(var(--radius) + var(--stroke));
+    border-radius: 0;
+    background: radial-gradient(
+      circle at 0 0,
+      transparent calc(var(--radius) + var(--stroke)),
+      var(--edge) calc(var(--radius) + var(--stroke) + 0.5px)
+    );
+  }
+  .icon-cards_card:hover .icon-cards_shape .is-a:not(.is-fill),
+  .icon-cards_card:hover .icon-cards_shape .is-b:not(.is-fill),
+  .icon-cards_card:hover .icon-cards_shape .is-fillet:not(.is-fill) {
+    --edge: var(--color-primary-400);
+  }
+</style>

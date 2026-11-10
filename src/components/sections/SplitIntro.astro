@@ -1,0 +1,42 @@
+---
+/** "Title & text + image" — e.g. Service detail › Understanding the Value. */
+import CmsImage from '../global/CmsImage.astro';
+import SectionTag from '../global/SectionTag.astro';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'splitIntro'>;
+}
+const { block } = Astro.props;
+const imageLeft = block.imagePosition === 'left';
+---
+
+<section class="section_split-intro" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div
+        class:list={[
+          'split-intro_component grid items-start gap-12 py-16 lg:gap-16 lg:py-[8.75rem]',
+          imageLeft ? 'lg:grid-cols-[31.45rem_1fr]' : 'lg:grid-cols-[1fr_31.45rem]',
+        ]}
+      >
+        <div class:list={['split-intro_content flex flex-col items-start lg:pt-[2.9rem]', imageLeft && 'lg:order-last lg:pl-8']}>
+          <div class="split-intro_title flex flex-col items-start gap-7" data-reveal>
+            <SectionTag text={block.tag} />
+            <h2 class="split-intro_heading heading-style-h1 max-w-[43rem] text-neutral-800 lg:leading-[1.25]">{block.heading}</h2>
+          </div>
+          {
+            block.text && (
+              <p class="split-intro_text text-size-large mt-8 max-w-[39rem] text-neutral-700 lg:leading-[1.64]" data-reveal style="--reveal-delay: 100">
+                {block.text}
+              </p>
+            )
+          }
+        </div>
+        <div class="split-intro_visual aspect-[503/497] w-full overflow-hidden bg-surface max-lg:max-w-[31.45rem]" data-reveal style="--reveal-delay: 150">
+          <CmsImage media={block.image} class="split-intro_image size-full object-cover" sizes="(min-width: 64rem) 503px, 100vw" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
