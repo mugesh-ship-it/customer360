@@ -38,12 +38,19 @@ Two Vercel projects deploy from this repo's `main` branch: `customer360-site` (t
 
 - **Pages and Case studies have drafts.** *Save draft* changes nothing on the live site; **Publish** (or Unpublish)
   rebuilds it via the `REBUILD_HOOK_URL` deploy hook, live in ~1–2 min. Other collections and settings rebuild on every save.
+- **Live preview.** Pages and Case studies have a *Live Preview* toggle (and a Preview button) in the editor. It shows the
+  draft on the real site at `/preview/<pages|case-studies>/<id>`: the one route rendered on request (Vercel function via
+  `@astrojs/vercel`), everything else stays static. Drafts autosave every 1.5s and the preview reloads, keeping its scroll position.
+  Links are signed by the CMS for logged-in editors and expire after a day or two; preview pages are noindex and load no tracking.
+  Code: `cms/src/preview.ts`, `src/pages/preview/[collection]/[id].astro`, `Layout.astro` (`preview` prop).
 - **Previews get their own database.** Neon creates a branch (a copy of production) for each CMS preview deployment,
   and `cms/scripts/migrate.mjs` migrates that copy. Production is migrated only when the change reaches `main`.
   If preview branching is ever turned off, remove `PREVIEW_DB_ISOLATED` from the Preview environment so previews skip migrations.
 - **Schema changes need a migration:** change a collection/block, then
   `cd cms && DATABASE_URL=postgres://x@localhost/x BLOB_READ_WRITE_TOKEN=vercel_blob_rw_x_x npx payload migrate:create <name>`
   (no database connection needed; the dummy blob token keeps the Vercel Blob field in the schema). Commit the files in `cms/src/migrations`.
+- **Local SQLite failing after a schema change** (e.g. `index … already exists` on CMS start): stop the CMS dev server and run
+  `cd cms && npm run db:rebuild-local`. It backs up `customer360.db`, rebuilds it on the current schema and copies every row back.
 
 ## Pages
 

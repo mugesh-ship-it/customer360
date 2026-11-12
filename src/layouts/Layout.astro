@@ -4,7 +4,7 @@ import Navbar from '../components/global/Navbar.astro';
 import Footer from '../components/global/Footer.astro';
 import Seo from '../components/global/Seo.astro';
 import Tracking from '../components/global/Tracking.astro';
-import { getHeader, getFooter, getDesign, getSiteSettings, pagePath, type Page } from '../lib/cms';
+import { CMS_URL, getHeader, getFooter, getDesign, getSiteSettings, pagePath, type Page } from '../lib/cms';
 import { designCss, googleFontsUrl } from '../lib/design';
 import { buildSeo, type SeoInput } from '../lib/seo';
 
@@ -12,6 +12,8 @@ import { buildSeo, type SeoInput } from '../lib/seo';
 type Props = ({ page: Page; seo?: never } | { page?: never; seo: SeoInput }) & {
   /** Lighter page background for pages that aren't in Pages (e.g. a case study). */
   light?: boolean;
+  /** Draft preview rendered for the CMS: not indexed, no tracking, reloads when the editor saves. */
+  preview?: boolean;
 };
 
 const props = Astro.props;
@@ -21,12 +23,14 @@ const input: SeoInput = props.page
   ? { title: props.page.title, path: pagePath(props.page.slug), meta: props.page.meta, seo: props.page.seo }
   : props.seo!;
 const seo = buildSeo(input, settings);
+if (props.preview) seo.robots = 'noindex, nofollow';
+const cmsOrigin = new URL(CMS_URL).origin;
 const themeVars = designCss(design);
 const fontsUrl = googleFontsUrl(design);
 ---
 
 <!doctype html>
-<html lang={seo.lang}>
+<html lang={seo.lang} class:list={[props.preview && 'is-preview']}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -38,10 +42,20 @@ const fontsUrl = googleFontsUrl(design);
     <link rel="stylesheet" href={fontsUrl} />
     {themeVars && <style is:inline set:html={themeVars} />}
     <script is:inline>document.documentElement.classList.add('js');</script>
-    <Tracking settings={settings} position="head" />
+    {!props.preview && <Tracking settings={settings} position="head" />}
+    {
+      props.preview && (
+        <style is:inline>
+          {`html.is-preview [data-reveal] { opacity: 1; transform: none; transition: none; }
+          .preview_badge { position: fixed; z-index: 9999; right: 1rem; bottom: 1rem; padding: 0.5rem 0.875rem; border-radius: 999px;
+            background: var(--color-neutral-900, #111); color: #fff; font: 600 0.75rem/1 system-ui, sans-serif; letter-spacing: 0.02em;
+            pointer-events: none; opacity: 0.85; }`}
+        </style>
+      )
+    }
   </head>
   <body class:list={[(props.page?.pageBackground === 'light' || props.light) && 'is-light']}>
-    <Tracking settings={settings} position="body" />
+    {!props.preview && <Tracking settings={settings} position="body" />}
     <div class="page-wrapper">
       <Navbar header={header} />
       <main class="main-wrapper">
@@ -74,6 +88,36 @@ const fontsUrl = googleFontsUrl(design);
         targets.forEach((el) => io.observe(el));
       }
     </script>
-    <Tracking settings={settings} position="end" />
+    {!props.preview && <Tracking settings={settings} position="end" />}
+    {
+      props.preview && (
+        <>
+          <div class="preview_badge" aria-hidden="true">Draft preview</div>
+          <script is:inline define:vars={{ cmsOrigin }}>
+            // Payload live preview: say we're ready, then reload whenever the editor's draft is saved.
+            // The scroll position survives the reload so the editor stays on the section they're editing.
+            const KEY = 'preview-scroll:' + location.pathname;
+            try {
+              const y = sessionStorage.getItem(KEY);
+              if (y !== null) {
+                sessionStorage.removeItem(KEY);
+                history.scrollRestoration = 'manual';
+                addEventListener('load', () => scrollTo(0, Number(y)));
+              }
+            } catch {}
+            if (window.parent !== window) window.parent.postMessage({ type: 'payload-live-preview', ready: true }, cmsOrigin);
+            let timer;
+            addEventListener('message', (event) => {
+              if (event.origin !== cmsOrigin || event.data?.type !== 'payload-document-event') return;
+              clearTimeout(timer);
+              timer = setTimeout(() => {
+                try { sessionStorage.setItem(KEY, String(scrollY)); } catch {}
+                location.reload();
+              }, 150);
+            });
+          </script>
+        </>
+      )
+    }
   </body>
 </html>

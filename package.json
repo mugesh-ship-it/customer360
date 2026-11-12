@@ -13,6 +13,7 @@
     "start:cms": "npm --prefix cms run build && npm --prefix cms run start"
   },
   "dependencies": {
+    "@astrojs/vercel": "^11.0.21",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.1",
     "lenis": "^1.3.27",

@@ -1,0 +1,59 @@
+---
+/**
+ * Draft preview for the CMS's Live Preview panel: /preview/<pages|case-studies>/<id>?exp=…&sig=…
+ * The only route rendered on request; everything else on the site is static. The CMS signs the link
+ * for a logged-in editor and checks the signature again before handing over the draft.
+ */
+import Layout from '../../../layouts/Layout.astro';
+import RenderBlocks from '../../../components/RenderBlocks.astro';
+import CaseStudyArticle from '../../../components/templates/CaseStudyArticle.astro';
+import { getPreviewDoc, type CaseStudy, type Page } from '../../../lib/cms';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
+const { collection, id } = Astro.params;
+const exp = Astro.url.searchParams.get('exp') ?? '';
+const sig = Astro.url.searchParams.get('sig') ?? '';
+
+let error: string | null = null;
+let page: Page | null = null;
+let caseStudy: CaseStudy | null = null;
+
+if ((collection !== 'pages' && collection !== 'case-studies') || !id) {
+  error = 'Unknown preview.';
+  Astro.response.status = 404;
+} else {
+  const result = await getPreviewDoc<Page | CaseStudy>(collection, id, exp, sig);
+  if ('error' in result) {
+    error = result.error;
+    Astro.response.status = result.status;
+  } else if (collection === 'pages') {
+    page = result.doc as Page;
+  } else {
+    caseStudy = result.doc as CaseStudy;
+  }
+}
+---
+
+{page && (
+  <Layout page={page} preview>
+    <RenderBlocks blocks={page.layout} />
+  </Layout>
+)}
+{caseStudy && <CaseStudyArticle item={caseStudy} preview />}
+{error && (
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="robots" content="noindex, nofollow" />
+      <title>Preview unavailable</title>
+    </head>
+    <body style="font: 16px/1.5 system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1rem; text-align: center; color: #333;">
+      <p>{error}</p>
+    </body>
+  </html>
+)}

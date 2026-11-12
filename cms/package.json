@@ -14,7 +14,8 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/seed/index.ts",
-    "ci": "node scripts/migrate.mjs && npm run build"
+    "ci": "node scripts/migrate.mjs && npm run build",
+    "db:rebuild-local": "node scripts/rebuild-local-db.mjs"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.93.0",

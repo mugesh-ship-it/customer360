@@ -21,6 +21,7 @@ import { Footer } from './globals/Footer'
 import { Design } from './globals/Design'
 import { CaseStudyPage } from './globals/CaseStudyPage'
 import { SiteSettings } from './globals/SiteSettings'
+import { PREVIEW_COLLECTIONS, previewDocEndpoint, previewURL } from './preview'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -48,7 +49,21 @@ export default buildConfig({
       },
       beforeDashboard: ['/components/admin/Welcome#Welcome'],
     },
+    // Drafts shown on the real site beside the editor, refreshed on every autosave.
+    livePreview: {
+      collections: [...PREVIEW_COLLECTIONS],
+      url: ({ data, collectionConfig, req }) =>
+        collectionConfig?.slug === 'pages' || collectionConfig?.slug === 'case-studies'
+          ? previewURL(collectionConfig.slug, data?.id, req)
+          : null,
+      breakpoints: [
+        { name: 'mobile', label: 'Mobile', width: 390, height: 844 },
+        { name: 'tablet', label: 'Tablet', width: 820, height: 1180 },
+        { name: 'desktop', label: 'Desktop', width: 1440, height: 900 },
+      ],
+    },
   },
+  endpoints: [previewDocEndpoint],
   collections: [Pages, Services, Products, CaseStudies, Testimonials, TeamProfiles, Media, Redirects, Users],
   globals: [Header, Footer, SiteSettings, Design, CaseStudyPage],
   cors: corsOrigins,

@@ -3,6 +3,7 @@ import { seoText } from '../fields/design'
 import { rowLabel } from '../fields/rowLabel'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
+import { previewURL } from '../preview'
 
 /** "Accelerating Digital Adoption…" → "accelerating-digital-adoption…" */
 export const slugify = (value: string) =>
@@ -22,15 +23,16 @@ export const CaseStudies: CollectionConfig = {
   slug: 'case-studies',
   labels: { singular: 'Case study', plural: 'Case studies' },
   access: { read: publishedOrLoggedIn },
-  // Editors save drafts freely; only Publish changes the live site.
-  versions: { drafts: true, maxPerDoc: 25 },
+  // Drafts autosave (feeding live preview); only Publish changes the live site.
+  versions: { drafts: { autosave: { interval: 1500 } }, maxPerDoc: 25 },
   defaultSort: '-publishedAt',
   admin: {
     group: 'Content',
     useAsTitle: 'title',
     defaultColumns: ['title', 'service', 'client', 'publishedAt'],
     description: 'Client success stories. Each one gets its own page at /case-studies/<web address> and appears on the Case Studies page.',
-    preview: (doc) => `${process.env.SITE_URL || 'http://localhost:4321'}/case-studies/${doc?.slug ?? ''}`,
+    // The Preview button opens the draft, not the live page.
+    preview: (doc, { req }) => previewURL('case-studies', doc?.id as string | number | undefined, req),
   },
   hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [

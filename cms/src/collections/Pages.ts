@@ -2,23 +2,22 @@ import type { CollectionConfig } from 'payload'
 import { pageBlocks } from '../blocks'
 import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
 import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
+import { previewURL } from '../preview'
 import { seoText } from '../fields/design'
-
-const siteUrl = process.env.SITE_URL || 'http://localhost:4321'
-const pagePath = (slug?: string | null) => (!slug || slug === 'home' ? '/' : `/${slug}`)
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   labels: { singular: 'Page', plural: 'Pages' },
   access: { read: publishedOrLoggedIn },
-  // Editors save drafts freely; only Publish changes the live site.
-  versions: { drafts: true, maxPerDoc: 25 },
+  // Drafts autosave (feeding live preview); only Publish changes the live site.
+  versions: { drafts: { autosave: { interval: 1500 } }, maxPerDoc: 25 },
   admin: {
     group: 'Content',
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
     description: 'Every page of the website. Open a page, then edit its sections one by one.',
-    preview: (doc) => `${siteUrl}${pagePath(doc?.slug as string)}`,
+    // The Preview button opens the draft, not the live page.
+    preview: (doc, { req }) => previewURL('pages', doc?.id as string | number | undefined, req),
   },
   hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [

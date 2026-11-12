@@ -48,12 +48,24 @@ export async function getRedirects(): Promise<Redirect[]> {
 }
 
 /**
- * Globals are read once per build: every page uses them, so this saves a
- * request per page. `astro dev` re-imports per request, so edits still show.
+ * Globals are shared by every page, so a build reads each one once instead of per page.
+ * The cache expires after a minute so the on-demand draft preview never shows a stale
+ * header, footer or design for long. `astro dev` always reads fresh.
  */
-const once = <T>(fn: () => Promise<T>) => {
+const once = <T>(fn: () => Promise<T>, ttlMs = 60_000) => {
   let p: Promise<T> | undefined;
-  return () => (import.meta.env.DEV ? fn() : (p ??= fn()));
+  let at = 0;
+  return () => {
+    if (import.meta.env.DEV) return fn();
+    if (!p || Date.now() - at > ttlMs) {
+      at = Date.now();
+      p = fn().catch((err) => {
+        p = undefined;
+        throw err;
+      });
+    }
+    return p;
+  };
 };
 
 export const getHeader = once(() => request<Header>('/globals/header?depth=1'));
@@ -107,4 +119,26 @@ export function linkAttrs(link: LinkValue) {
     href: link.url,
     ...(link.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
   };
+}
+
+/** Collections the CMS can preview as drafts (see cms/src/preview.ts). */
+export type PreviewCollection = 'pages' | 'case-studies';
+
+/**
+ * Latest draft of a document, for the on-demand preview route. The CMS checks the signed
+ * `exp`/`sig` it generated for the editor; this site holds no secret of its own.
+ */
+export async function getPreviewDoc<T extends Page | CaseStudy>(
+  collection: PreviewCollection,
+  id: string,
+  exp: string,
+  sig: string,
+): Promise<{ doc: T } | { error: string; status: number }> {
+  const q = new URLSearchParams({ collection, id, exp, sig });
+  const res = await fetch(`${CMS_URL}/api/preview-doc?${q}`, { signal: AbortSignal.timeout(10_000), cache: 'no-store' });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    return { error: body?.error || `The CMS answered ${res.status}.`, status: res.status };
+  }
+  return { doc: (await res.json()) as T };
 }
