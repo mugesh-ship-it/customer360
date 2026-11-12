@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { triggerRebuildOnDelete, triggerRebuildOnMediaChange } from '../hooks/triggerRebuild'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -7,8 +8,10 @@ export const Media: CollectionConfig = {
   admin: {
     group: 'Content',
     useAsTitle: 'filename',
-    description: 'All images and videos used on the website. Uploading a new file here does not change the site until you pick it in a page.',
+    description:
+      'All images and videos used on the website. Uploading a new file here does not change the site until you pick it in a page. Editing or replacing an existing one updates the live site in a few minutes.',
   },
+  hooks: { afterChange: [triggerRebuildOnMediaChange], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     {
       name: 'alt',

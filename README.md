@@ -38,6 +38,8 @@ Two Vercel projects deploy from this repo's `main` branch: `customer360-site` (t
 
 - **Pages and Case studies have drafts.** *Save draft* changes nothing on the live site; **Publish** (or Unpublish)
   rebuilds it via the `REBUILD_HOOK_URL` deploy hook, live in ~1–2 min. Other collections and settings rebuild on every save.
+- **Images & Files** rebuild when an existing file is edited, replaced or deleted (the pages embed its URL). A new upload
+  does not; it reaches the site when a page using it is published. A bulk edit queues one rebuild, not one per document.
 - **Live preview.** Pages and Case studies have a *Live Preview* toggle (and a Preview button) in the editor. It shows the
   draft on the real site at `/preview/<pages|case-studies>/<id>`: the one route rendered on request (Vercel function via
   `@astrojs/vercel`), everything else stays static. Drafts autosave every 1.5s and the preview reloads, keeping its scroll position.
