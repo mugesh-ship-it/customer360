@@ -31,6 +31,20 @@ npm install && npm run dev
 In `astro dev` every request reads the CMS, so content edits show on refresh.
 `npm run build` produces a fully static site; set `REBUILD_HOOK_URL` in `cms/.env` to trigger a redeploy after edits.
 
+## Deploys & publishing
+
+Two Vercel projects deploy from this repo's `main` branch: `customer360-site` (the Astro site) and
+`customer360-cms` (root `cms/`, which only rebuilds when `cms/` changes). Every other branch and PR gets preview URLs.
+
+- **Pages and Case studies have drafts.** *Save draft* changes nothing on the live site; **Publish** (or Unpublish)
+  rebuilds it via the `REBUILD_HOOK_URL` deploy hook, live in ~1–2 min. Other collections and settings rebuild on every save.
+- **Previews get their own database.** Neon creates a branch (a copy of production) for each CMS preview deployment,
+  and `cms/scripts/migrate.mjs` migrates that copy. Production is migrated only when the change reaches `main`.
+  If preview branching is ever turned off, remove `PREVIEW_DB_ISOLATED` from the Preview environment so previews skip migrations.
+- **Schema changes need a migration:** change a collection/block, then
+  `cd cms && DATABASE_URL=postgres://x@localhost/x BLOB_READ_WRITE_TOKEN=vercel_blob_rw_x_x npx payload migrate:create <name>`
+  (no database connection needed; the dummy blob token keeps the Vercel Blob field in the schema). Commit the files in `cms/src/migrations`.
+
 ## Pages
 
 - **Home** (`home`) and **About Us** (`about`, Figma node 481:16166). Refresh About content without touching other pages:

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 /** The company's own products. Shown in "Product grid" sections. */
 export const Products: CollectionConfig = {
@@ -12,7 +12,7 @@ export const Products: CollectionConfig = {
     defaultColumns: ['name', 'status', 'updatedAt'],
     description: 'Products you build. Pick them in a page’s “Product grid” section.',
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     {
       type: 'row',

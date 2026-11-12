@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 const path = (v: unknown) =>
   typeof v === 'string' && /^\/[^\s]*$/.test(v) ? true : 'Start with / , e.g. /old-page'
@@ -14,7 +14,7 @@ export const Redirects: CollectionConfig = {
     defaultColumns: ['from', 'to', 'type'],
     description: 'Send visitors (and Google) from an old link to a new one, so you keep your rankings when pages move.',
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     {
       type: 'row',

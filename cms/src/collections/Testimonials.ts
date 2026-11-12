@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 export const Testimonials: CollectionConfig = {
   slug: 'testimonials',
@@ -11,7 +11,7 @@ export const Testimonials: CollectionConfig = {
     defaultColumns: ['name', 'role', 'headline', 'updatedAt'],
     description: 'Client quotes. After adding one here, choose it in the Testimonials section of a page.',
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     {
       type: 'row',

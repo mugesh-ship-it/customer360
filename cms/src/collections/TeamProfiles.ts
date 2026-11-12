@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 /** People shown on the website (not admin logins — those are "Team members" under Settings). */
 export const TeamProfiles: CollectionConfig = {
@@ -12,7 +12,7 @@ export const TeamProfiles: CollectionConfig = {
     defaultColumns: ['name', 'role', 'updatedAt'],
     description: 'People shown in “Team” sections on the website. Add someone here, then pick them in a page’s Team section.',
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     {
       type: 'row',

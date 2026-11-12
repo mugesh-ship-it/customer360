@@ -1,7 +1,8 @@
 import type { CollectionConfig, FieldHook } from 'payload'
 import { seoText } from '../fields/design'
 import { rowLabel } from '../fields/rowLabel'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 /** "Accelerating Digital Adoption…" → "accelerating-digital-adoption…" */
 export const slugify = (value: string) =>
@@ -20,7 +21,9 @@ const slugFromTitle: FieldHook = ({ value, data }) => (value ? slugify(String(va
 export const CaseStudies: CollectionConfig = {
   slug: 'case-studies',
   labels: { singular: 'Case study', plural: 'Case studies' },
-  access: { read: () => true },
+  access: { read: publishedOrLoggedIn },
+  // Editors save drafts freely; only Publish changes the live site.
+  versions: { drafts: true, maxPerDoc: 25 },
   defaultSort: '-publishedAt',
   admin: {
     group: 'Content',
@@ -29,7 +32,7 @@ export const CaseStudies: CollectionConfig = {
     description: 'Client success stories. Each one gets its own page at /case-studies/<web address> and appears on the Case Studies page.',
     preview: (doc) => `${process.env.SITE_URL || 'http://localhost:4321'}/case-studies/${doc?.slug ?? ''}`,
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     { name: 'title', label: 'Headline', type: 'text', required: true, admin: { placeholder: 'Accelerating Digital Adoption Across 20,000 Employees' } },
     {

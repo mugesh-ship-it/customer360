@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 
 /** The company's services. Shown in "Services grid" sections and used as case-study categories. */
 export const Services: CollectionConfig = {
@@ -12,7 +12,7 @@ export const Services: CollectionConfig = {
     defaultColumns: ['title', 'url', 'updatedAt'],
     description: 'Each service you offer. Pick them in a page’s “Services grid” section; case studies can be filed under one.',
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     { name: 'title', label: 'Service name', type: 'text', required: true },
     { name: 'summary', label: 'One-line summary', type: 'textarea', admin: { description: 'Shown under the name on service cards. About 15 words.' } },

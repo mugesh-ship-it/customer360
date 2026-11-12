@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { pageBlocks } from '../blocks'
-import { triggerRebuild } from '../hooks/triggerRebuild'
+import { publishedOrLoggedIn } from '../access/publishedOrLoggedIn'
+import { triggerRebuild, triggerRebuildOnDelete } from '../hooks/triggerRebuild'
 import { seoText } from '../fields/design'
 
 const siteUrl = process.env.SITE_URL || 'http://localhost:4321'
@@ -9,7 +10,9 @@ const pagePath = (slug?: string | null) => (!slug || slug === 'home' ? '/' : `/$
 export const Pages: CollectionConfig = {
   slug: 'pages',
   labels: { singular: 'Page', plural: 'Pages' },
-  access: { read: () => true },
+  access: { read: publishedOrLoggedIn },
+  // Editors save drafts freely; only Publish changes the live site.
+  versions: { drafts: true, maxPerDoc: 25 },
   admin: {
     group: 'Content',
     useAsTitle: 'title',
@@ -17,7 +20,7 @@ export const Pages: CollectionConfig = {
     description: 'Every page of the website. Open a page, then edit its sections one by one.',
     preview: (doc) => `${siteUrl}${pagePath(doc?.slug as string)}`,
   },
-  hooks: { afterChange: [triggerRebuild] },
+  hooks: { afterChange: [triggerRebuild], afterDelete: [triggerRebuildOnDelete] },
   fields: [
     { name: 'title', label: 'Page name', type: 'text', required: true, admin: { description: 'For your reference in the admin.' } },
     {
