@@ -4,7 +4,7 @@
  * in a 2-column grid on the right. Each card has a notched top-left corner
  * holding a round icon badge.
  */
-import CmsImage from '../global/CmsImage.astro';
+import Illustration from '../global/Illustration.astro';
 import SectionTag from '../global/SectionTag.astro';
 import { populated, type BlockOf, type Product } from '../../lib/cms';
 
@@ -46,7 +46,7 @@ const products = (block.products ?? []).map((p) => populated<Product>(p)).filter
                       />
                     </svg>
                     <span class="product-grid_badge absolute top-0 left-0 flex size-[25.4%] max-w-20 items-center justify-center rounded-full border-2 border-primary-500 bg-(--color-page) transition-transform duration-500 ease-out-soft group-hover:scale-105" aria-hidden="true">
-                      <CmsImage media={p.icon} class="product-grid_icon size-[37.5%] object-contain" sizes="30px" decorative />
+                      <Illustration media={p.icon} class="ill-icon product-grid_icon size-[37.5%]" style="--ill-lift:-3px" sizes="30px" decorative />
                     </span>
                     <div class="product-grid_body relative flex flex-col gap-4 pr-6 pb-10 pl-[11.4%] lg:gap-5">
                       <h3 class="product-grid_title text-[clamp(1.25rem,1vw+0.9rem,1.5rem)] leading-tight font-semibold tracking-[-0.02em] text-neutral-700">{p.name}</h3>

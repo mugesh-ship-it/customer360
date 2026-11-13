@@ -4,7 +4,7 @@
  * The notched card outline is built from rounded boxes (no SVG), so it keeps a
  * crisp 100px notch at any card width and its colours follow the brand tokens.
  */
-import CmsImage from '../global/CmsImage.astro';
+import Illustration from '../global/Illustration.astro';
 import SectionTag from '../global/SectionTag.astro';
 import { sectionBg } from '../../lib/sections';
 import type { BlockOf } from '../../lib/cms';
@@ -33,7 +33,7 @@ const { block } = Astro.props;
                   <span class="is-a is-fill" /><span class="is-b is-fill" /><span class="is-fillet is-fill" />
                 </span>
                 <span class="icon-cards_badge absolute top-0 left-0 flex size-20 items-center justify-center rounded-full border-2 border-primary-500 bg-page">
-                  <CmsImage media={card.icon} class="icon-cards_icon h-auto max-h-9 w-auto max-w-9 transition-transform duration-500 ease-out-soft group-hover:scale-110" sizes="36px" decorative />
+                  <Illustration media={card.icon} class="ill-icon icon-cards_icon size-9" style="--ill-lift:-3px" sizes="36px" decorative />
                 </span>
                 <h3 class="icon-cards_title heading-style-h3 relative text-neutral-700">{card.title}</h3>
                 {card.description && <p class="icon-cards_text text-size-regular relative mt-6 text-neutral-600">{card.description}</p>}

@@ -186,6 +186,9 @@ const label = decorative ? undefined : doc?.alt || undefined;
     transform: rotateX(var(--ill-rx, 0deg)) rotateY(var(--ill-ry, 0deg));
     transform-style: preserve-3d;
   }
+  .ill-icon .ill_shadow {
+    display: none;
+  }
   .ill_svg {
     display: block;
     width: 100%;
@@ -276,7 +279,7 @@ const label = decorative ? undefined : doc?.alt || undefined;
       translate: 0 0;
     }
     50% {
-      translate: 0 -7px;
+      translate: 0 var(--ill-lift, -10px);
     }
   }
   @keyframes ill-shadow {
@@ -286,7 +289,7 @@ const label = decorative ? undefined : doc?.alt || undefined;
       opacity: 1;
     }
     50% {
-      transform: scaleX(0.86);
+      transform: scaleX(0.82);
       opacity: 0.7;
     }
   }
