@@ -19,9 +19,9 @@ export function initScroll() {
   if (lenis || reduceMotion) return lenis;
   lenis = new Lenis({
     autoRaf: true,
-    lerp: 0.1,
+    lerp: 0.075,
     smoothWheel: true,
-    wheelMultiplier: 1,
+    wheelMultiplier: 0.75,
     touchMultiplier: 1,
     anchors: { offset: -24 },
   });
