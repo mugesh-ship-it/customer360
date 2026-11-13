@@ -419,8 +419,8 @@ const hubSize = { w: f(((R_HUB * 2) / vb.w) * 100) };
   }
   .wheel_label {
     position: absolute;
-    translate: -50% -50%;
-    transform: translateZ(1px);
+    /* One transform on purpose: the production CSS minifier drops a separate `translate` here */
+    transform: translate3d(-50%, -50%, 1px);
     margin: 0;
     width: max-content;
     max-width: 6.5em;
