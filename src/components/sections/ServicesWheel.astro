@@ -130,11 +130,58 @@ function sliceBox(a0: number, a1: number, rOut: number) {
   };
 }
 
+/**
+ * Fit a label inside its slice. The text box (estimated from the label's font
+ * size and wrapped like the CSS does) is slid along the slice's bisector to the
+ * radius where all four corners sit furthest from both edges and both arcs. If
+ * it still doesn't clear MARGIN, the font shrinks a little until it does.
+ */
+const CHAR_W = 0.57; // average glyph width in em (semi-bold, tight tracking)
+const LINE_H = 1.2;
+const MAX_EM = 6.5; // matches .wheel_label max-width
+const MARGIN = 12;
+function fitLabel(text: string, a0: number, r: number) {
+  const words = text.split(/\s+/);
+  const nA: [number, number] = [Math.cos(rad(a0)), Math.sin(rad(a0))];
+  const nB: [number, number] = [-Math.cos(rad(a0 + SLOT_DEG)), -Math.sin(rad(a0 + SLOT_DEG))];
+  const mid = a0 + SLOT_DEG / 2;
+  let best = { rc: R_IN + (r - R_IN) * 0.68, scale: 1, clearance: -Infinity };
+  for (let scale = 1; scale >= 0.7; scale -= 0.06) {
+    const em = vb.w * 0.02 * scale;
+    const lines: string[] = [];
+    let cur = '';
+    for (const w of words) {
+      const t = cur ? `${cur} ${w}` : w;
+      if (cur && t.length * CHAR_W > MAX_EM) {
+        lines.push(cur);
+        cur = w;
+      } else cur = t;
+    }
+    lines.push(cur);
+    const w = Math.max(...lines.map((l) => l.length * CHAR_W)) * em;
+    const h = lines.length * LINE_H * em;
+    for (let rc = R_IN; rc <= r; rc += 2) {
+      const [cx, cy] = pt(mid, rc);
+      let clearance = Infinity;
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const x = cx + (sx * w) / 2;
+        const y = cy + (sy * h) / 2;
+        const rho = Math.hypot(x, y);
+        clearance = Math.min(clearance, x * nA[0] + y * nA[1] - GAP / 2, x * nB[0] + y * nB[1] - GAP / 2, r - rho, rho - R_IN);
+      }
+      if (clearance > best.clearance) best = { rc, scale, clearance };
+    }
+    if (best.clearance >= MARGIN) break;
+  }
+  return best;
+}
+
 const slices = services.map((service, i) => {
   const a0 = SLOT_STARTS[i];
   const mid = a0 + SLOT_DEG / 2;
   const r = radii[i];
-  const [lx, ly] = pt(mid, R_IN + (r - R_IN) * 0.68);
+  const fit = fitLabel(service.label ?? '', a0, r);
+  const [lx, ly] = pt(mid, fit.rc);
   const [dx, dy] = pt(mid, LIFT);
   return {
     service,
@@ -142,7 +189,7 @@ const slices = services.map((service, i) => {
     d: slicePath(a0, a0 + SLOT_DEG, r),
     box: sliceBox(a0, a0 + SLOT_DEG, r),
     r,
-    label: { x: pctX(lx), y: pctY(ly) },
+    label: { x: pctX(lx), y: pctY(ly), scale: f(fit.scale) },
     // Hover slide as a % of the (container-sized) layer
     lift: { x: f((dx / vb.w) * 100), y: f((dy / vb.h) * 100) },
   };
@@ -222,7 +269,7 @@ const hubSize = { w: f(((R_HUB * 2) / vb.w) * 100) };
                         </g>
                         <path class="wheel_edge" d={d} />
                       </svg>
-                      <p class="wheel_label" style={`left: ${label.x}%; top: ${label.y}%;`}>
+                      <p class="wheel_label" style={`left: ${label.x}%; top: ${label.y}%; --fit: ${label.scale};`}>
                         <span>{service.label}</span>
                       </p>
                     </div>
@@ -379,7 +426,7 @@ const hubSize = { w: f(((R_HUB * 2) / vb.w) * 100) };
     max-width: 6.5em;
     text-wrap: balance;
     text-align: center;
-    font-size: max(0.625rem, 2cqi);
+    font-size: max(0.625rem, calc(2cqi * var(--fit, 1)));
     line-height: 1.2;
     font-weight: 600;
     letter-spacing: -0.02em;
