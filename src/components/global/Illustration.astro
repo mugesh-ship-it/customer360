@@ -124,11 +124,81 @@ const label = decorative ? undefined : doc?.alt || undefined;
           const el = e.target as HTMLElement;
           if (e.isIntersecting) el.classList.add('is-in');
           el.classList.toggle('is-live', e.isIntersecting);
+          (el as HTMLElement & { _pa?: Animation[] })._pa?.forEach((x) => (e.isIntersecting ? x.play() : x.pause()));
         }
       },
       { rootMargin: '0px 0px -12% 0px' },
     );
     items.forEach((el) => io.observe(el));
+
+    /**
+     * Lottie-style particle motion. Free-floating dots around the artwork (the blue "ring" nodes —
+     * a white/grey/blue trio sharing one centre — and the small dark dots) each drift on their own
+     * looping path with a soft pulse. Artwork parts (LEDs, vents, keys) are left alone.
+     * Uses WAAPI so it composes with the CSS twinkle/float and pauses off-screen.
+     */
+    const setupParticles = (host: HTMLElement) => {
+      const svg = host.querySelector<SVGSVGElement>('.ill_svg');
+      if (!svg || host.dataset.particles) return;
+      host.dataset.particles = '1';
+      const R = svg.getBoundingClientRect();
+      if (!R.width) return;
+      const vb = svg.viewBox.baseVal;
+      const unit = vb && vb.width ? vb.width / R.width : 1; // px → user units
+      const small: { e: SVGGraphicsElement; cx: number; cy: number; w: number; h: number; fill: string }[] = [];
+      svg.querySelectorAll<SVGGraphicsElement>('path,circle,ellipse,rect').forEach((e) => {
+        const r = e.getBoundingClientRect();
+        const w = r.width / R.width;
+        const h = r.height / R.width;
+        if (Math.max(w, h) > 0.07 || Math.max(w, h) === 0) return;
+        small.push({ e, cx: (r.left + r.width / 2 - R.left) / R.width, cy: (r.top + r.height / 2 - R.top) / R.width, w, h, fill: (e.getAttribute('fill') || '').toUpperCase() });
+      });
+      // cluster by shared centre
+      const clusters = new Map<string, typeof small>();
+      for (const o of small) {
+        const k = `${Math.round(o.cx / 0.006)}:${Math.round(o.cy / 0.006)}`;
+        (clusters.get(k) ?? clusters.set(k, []).get(k)!).push(o);
+      }
+      const groups: SVGGraphicsElement[][] = [];
+      for (const c of clusters.values()) {
+        if (c.length >= 3 && c.some((o) => /^#(1FB6FF|2E90FA|53B1FD|84CAFF)$/.test(o.fill))) groups.push(c.map((o) => o.e));
+        else if (c.length === 1) {
+          const o = c[0];
+          const ar = o.w / (o.h || 1);
+          if (o.fill === '#373B42' && Math.max(o.w, o.h) < 0.03 && ar > 0.6 && ar < 1.7) groups.push([o.e]);
+        }
+      }
+      const anims: Animation[] = [];
+      const amp = 0.035 * (vb?.width || R.width * unit); // ≈3.5% of artwork width, in user units
+      groups.forEach((g, i) => {
+        const a = (i * 2.399963) % (Math.PI * 2); // golden-angle heading, so neighbours differ
+        const r = amp * (0.7 + ((i * 0.37) % 1) * 0.6);
+        const dx = Math.cos(a) * r;
+        const dy = Math.sin(a) * r * 0.6;
+        const dur = 4200 + ((i * 0.61) % 1) * 3400;
+        const delay = -((i * 0.43) % 1) * dur;
+        g.forEach((el) => {
+          el.style.transformBox = 'fill-box';
+          el.style.transformOrigin = 'center';
+          anims.push(
+            el.animate(
+              [
+                { translate: '0px 0px', scale: 1 },
+                { translate: `${dx}px ${dy}px`, scale: 1.18, offset: 0.35 },
+                { translate: `${-dx * 0.6}px ${dy * 0.5 + r * 0.25}px`, scale: 0.9, offset: 0.7 },
+                { translate: '0px 0px', scale: 1 },
+              ],
+              { duration: dur, delay, iterations: Infinity, easing: 'ease-in-out' },
+            ),
+          );
+        });
+      });
+      (host as HTMLElement & { _pa?: Animation[] })._pa = anims;
+      if (!host.classList.contains('is-live')) anims.forEach((x) => x.pause());
+    };
+    if (!reduce) {
+      requestAnimationFrame(() => items.forEach(setupParticles));
+    }
 
     if (!reduce && finePointer) {
       const MAX = 10; // degrees
