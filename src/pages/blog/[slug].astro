@@ -1,0 +1,14 @@
+---
+/** A blog article's own page: /blog/<slug>. */
+import PostArticle from '../../components/templates/PostArticle.astro';
+import { getPosts, type Post } from '../../lib/cms';
+
+export async function getStaticPaths() {
+  const items = await getPosts();
+  return items.filter((p) => p.slug).map((p) => ({ params: { slug: p.slug! }, props: { item: p } }));
+}
+
+const { item } = Astro.props as { item: Post };
+---
+
+<PostArticle item={item} />

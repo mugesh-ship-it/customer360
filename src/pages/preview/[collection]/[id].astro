@@ -1,13 +1,14 @@
 ---
 /**
- * Draft preview for the CMS's Live Preview panel: /preview/<pages|case-studies>/<id>?exp=…&sig=…
+ * Draft preview for the CMS's Live Preview panel: /preview/<pages|case-studies|posts>/<id>?exp=…&sig=…
  * The only route rendered on request; everything else on the site is static. The CMS signs the link
  * for a logged-in editor and checks the signature again before handing over the draft.
  */
 import Layout from '../../../layouts/Layout.astro';
 import RenderBlocks from '../../../components/RenderBlocks.astro';
 import CaseStudyArticle from '../../../components/templates/CaseStudyArticle.astro';
-import { getPreviewDoc, type CaseStudy, type Page } from '../../../lib/cms';
+import PostArticle from '../../../components/templates/PostArticle.astro';
+import { getPreviewDoc, type CaseStudy, type Page, type Post } from '../../../lib/cms';
 
 export const prerender = false;
 
@@ -21,17 +22,20 @@ const sig = Astro.url.searchParams.get('sig') ?? '';
 let error: string | null = null;
 let page: Page | null = null;
 let caseStudy: CaseStudy | null = null;
+let post: Post | null = null;
 
-if ((collection !== 'pages' && collection !== 'case-studies') || !id) {
+if ((collection !== 'pages' && collection !== 'case-studies' && collection !== 'posts') || !id) {
   error = 'Unknown preview.';
   Astro.response.status = 404;
 } else {
-  const result = await getPreviewDoc<Page | CaseStudy>(collection, id, exp, sig);
+  const result = await getPreviewDoc<Page | CaseStudy | Post>(collection, id, exp, sig);
   if ('error' in result) {
     error = result.error;
     Astro.response.status = result.status;
   } else if (collection === 'pages') {
     page = result.doc as Page;
+  } else if (collection === 'posts') {
+    post = result.doc as Post;
   } else {
     caseStudy = result.doc as CaseStudy;
   }
@@ -44,6 +48,7 @@ if ((collection !== 'pages' && collection !== 'case-studies') || !id) {
   </Layout>
 )}
 {caseStudy && <CaseStudyArticle item={caseStudy} preview />}
+{post && <PostArticle item={post} preview />}
 {error && (
   <html lang="en">
     <head>

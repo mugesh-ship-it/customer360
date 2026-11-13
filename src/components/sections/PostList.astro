@@ -1,0 +1,51 @@
+---
+/** "Blog articles" — newest articles in a grid. 0 = all (the Blog page). */
+import Button from '../global/Button.astro';
+import SectionTag from '../global/SectionTag.astro';
+import PostCard from '../blog/PostCard.astro';
+import { sectionBg } from '../../lib/sections';
+import { getPosts, type BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'postList'>;
+}
+const { block } = Astro.props;
+const all = await getPosts();
+const posts = block.limit ? all.slice(0, block.limit) : all;
+const hidden = !posts.length && block.hideWhenEmpty;
+---
+
+{
+  !hidden && (
+    <section class:list={['section_post-list', sectionBg(block.background)]} id={block.anchorId || undefined}>
+      <div class="padding-global">
+        <div class="container-large">
+          <div class="post-list_component py-16 lg:py-[7.5rem]">
+            {(block.tag || block.heading) && (
+              <div class="post-list_header mb-10 flex flex-col items-start gap-7 lg:mb-14" data-reveal>
+                <SectionTag text={block.tag} />
+                {block.heading && <h2 class="post-list_heading heading-style-h2 text-neutral-800">{block.heading}</h2>}
+              </div>
+            )}
+            {posts.length ? (
+              <ul class="post-list_grid grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8" data-reveal>
+                {posts.map((p) => (
+                  <li>
+                    <PostCard item={p} headingLevel={block.heading ? 'h3' : 'h2'} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="post-list_empty text-size-large rounded-3xl bg-white px-8 py-16 text-center text-muted" data-reveal>{block.emptyText}</p>
+            )}
+            {posts.length > 0 && block.button?.label && (
+              <div class="mt-10 flex justify-center lg:mt-14">
+                <Button link={block.button} variant="icon" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

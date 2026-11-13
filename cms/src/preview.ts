@@ -9,8 +9,8 @@ import type { Endpoint, PayloadRequest } from 'payload'
  * passing the same signed parameters. Only this CMS can sign, and it only signs for logged-in editors,
  * so a preview link works without sharing a secret with the site, and it expires.
  */
-export const PREVIEW_COLLECTIONS = ['pages', 'case-studies'] as const
-type PreviewCollection = (typeof PREVIEW_COLLECTIONS)[number]
+export const PREVIEW_COLLECTIONS = ['pages', 'case-studies', 'posts'] as const
+export type PreviewCollection = (typeof PREVIEW_COLLECTIONS)[number]
 
 const DAY = 24 * 60 * 60 * 1000
 const siteURL = () => (process.env.SITE_URL || 'http://localhost:4321').replace(/\/$/, '')

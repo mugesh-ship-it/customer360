@@ -71,10 +71,13 @@ export interface Config {
     services: Service;
     products: Product;
     'case-studies': CaseStudy;
+    posts: Post;
+    jobs: Job;
     testimonials: Testimonial;
     'team-profiles': TeamProfile;
     media: Media;
     redirects: Redirect;
+    'contact-messages': ContactMessage;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -87,10 +90,13 @@ export interface Config {
     services: ServicesSelect<false> | ServicesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     'case-studies': CaseStudiesSelect<false> | CaseStudiesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    jobs: JobsSelect<false> | JobsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     'team-profiles': TeamProfilesSelect<false> | TeamProfilesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
+    'contact-messages': ContactMessagesSelect<false> | ContactMessagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -107,6 +113,7 @@ export interface Config {
     'site-settings': SiteSetting;
     design: Design;
     'case-study-page': CaseStudyPage;
+    'blog-page': BlogPage;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
@@ -114,6 +121,7 @@ export interface Config {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     design: DesignSelect<false> | DesignSelect<true>;
     'case-study-page': CaseStudyPageSelect<false> | CaseStudyPageSelect<true>;
+    'blog-page': BlogPageSelect<false> | BlogPageSelect<true>;
   };
   locale: null;
   widgets: {
@@ -189,6 +197,11 @@ export interface Page {
         | IconListBlock
         | DividerBlock
         | CaseStudyListBlock
+        | LongTextBlock
+        | FaqBlock
+        | ContactFormBlock
+        | JobListBlock
+        | PostListBlock
       )[]
     | null;
   meta?: {
@@ -287,7 +300,7 @@ export interface HeroBlock {
   blockType: 'hero';
 }
 /**
- * All images and videos used on the website. Uploading a new file here does not change the site until you pick it in a page.
+ * All images and videos used on the website. Uploading a new file here does not change the site until you pick it in a page. Editing or replacing an existing one updates the live site in a few minutes.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -298,6 +311,7 @@ export interface Media {
    * Helps visually impaired visitors and Google. Leave empty only for purely decorative images.
    */
   alt?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1179,6 +1193,308 @@ export interface CaseStudyListBlock {
   blockType: 'caseStudyList';
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LongTextBlock".
+ */
+export interface LongTextBlock {
+  /**
+   * Use “Heading 2” for each part. Headings become the “On this page” list.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  showContents?: boolean | null;
+  contentsLabel?: string | null;
+  /**
+   * Optional. Shown above the text.
+   */
+  lastUpdated?: string | null;
+  lastUpdatedLabel?: string | null;
+  /**
+   * Lets menu links jump to this section, e.g. “/#services”. Lowercase, no spaces. Most people can ignore this.
+   */
+  anchorId?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'longText';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock".
+ */
+export interface FaqBlock {
+  /**
+   * Colours come from Settings → Brand & design.
+   */
+  background?: ('page' | 'surface' | 'tint' | 'white') | null;
+  /**
+   * The little blue pill above the big title. Leave empty to hide it.
+   */
+  tag?: string | null;
+  heading: string;
+  intro?: string | null;
+  /**
+   * Optional, under the title, e.g. “Ask us something else” → /contact.
+   */
+  button?: {
+    label?: string | null;
+    url?: string | null;
+    newTab?: boolean | null;
+  };
+  items?:
+    | {
+        question: string;
+        /**
+         * Plain text. A blank line starts a new paragraph.
+         */
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Adds FAQ structured data. Use it on one page only (usually the FAQ page) to avoid duplicates.
+   */
+  addSchema?: boolean | null;
+  /**
+   * Lets menu links jump to this section, e.g. “/#services”. Lowercase, no spaces. Most people can ignore this.
+   */
+  anchorId?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContactFormBlock".
+ */
+export interface ContactFormBlock {
+  /**
+   * The little blue pill above the big title. Leave empty to hide it.
+   */
+  tag?: string | null;
+  heading: string;
+  intro?: string | null;
+  firstNameLabel?: string | null;
+  lastNameLabel?: string | null;
+  emailLabel?: string | null;
+  phoneLabel?: string | null;
+  companyLabel?: string | null;
+  messageLabel?: string | null;
+  submitLabel?: string | null;
+  sendingLabel?: string | null;
+  /**
+   * Words in {curly brackets} link to the privacy page below.
+   */
+  consentText?: string | null;
+  privacyUrl?: string | null;
+  successHeading?: string | null;
+  successText?: string | null;
+  errorText?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  officesHeading?: string | null;
+  offices?:
+    | {
+        city: string;
+        phone?: string | null;
+        /**
+         * One line per row.
+         */
+        address?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Lets menu links jump to this section, e.g. “/#services”. Lowercase, no spaces. Most people can ignore this.
+   */
+  anchorId?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'contactForm';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "JobListBlock".
+ */
+export interface JobListBlock {
+  /**
+   * The little blue pill above the big title. Leave empty to hide it.
+   */
+  tag?: string | null;
+  heading: string;
+  intro?: string | null;
+  applyLabel?: string | null;
+  moreLabel?: string | null;
+  lessLabel?: string | null;
+  defaultApplyUrl?: string | null;
+  emptyHeading?: string | null;
+  emptyText?: string | null;
+  /**
+   * e.g. “Send your CV” → mailto:… or /contact
+   */
+  emptyButton?: {
+    label?: string | null;
+    url?: string | null;
+    newTab?: boolean | null;
+  };
+  /**
+   * Lets menu links jump to this section, e.g. “/#services”. Lowercase, no spaces. Most people can ignore this.
+   */
+  anchorId?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'jobList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostListBlock".
+ */
+export interface PostListBlock {
+  /**
+   * Colours come from Settings → Brand & design.
+   */
+  background?: ('page' | 'surface' | 'tint' | 'white') | null;
+  /**
+   * The little blue pill above the big title. Leave empty to hide it.
+   */
+  tag?: string | null;
+  heading?: string | null;
+  /**
+   * 0 = all articles (for the Blog page). 3 works well elsewhere.
+   */
+  limit?: number | null;
+  hideWhenEmpty?: boolean | null;
+  emptyText?: string | null;
+  /**
+   * Optional, under the grid, e.g. “All articles” → /blog.
+   */
+  button?: {
+    label?: string | null;
+    url?: string | null;
+    newTab?: boolean | null;
+  };
+  /**
+   * Lets menu links jump to this section, e.g. “/#services”. Lowercase, no spaces. Most people can ignore this.
+   */
+  anchorId?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'postList';
+}
+/**
+ * Articles for the Blog. Each one gets its own page at /blog/<web address>.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * The end of the link, e.g. /blog/ai-readiness-checklist. Empty = made from the headline.
+   */
+  slug?: string | null;
+  /**
+   * Newest first on the Blog.
+   */
+  publishedAt?: string | null;
+  author?: string | null;
+  /**
+   * 1–2 sentences, shown on the article card and at the top of the article.
+   */
+  excerpt: string;
+  /**
+   * Landscape, about 1600 × 900.
+   */
+  coverImage?: (number | null) | Media;
+  /**
+   * Use “Heading 2” for each part. They become the “On this page” list.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * 1200 × 630 px. Empty = the cover image.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Open roles. Published jobs appear on the Careers page; unpublish one to take it down.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "jobs".
+ */
+export interface Job {
+  id: number;
+  title: string;
+  location?: string | null;
+  employmentType?: ('full-time' | 'part-time' | 'contract' | 'internship') | null;
+  /**
+   * One or two sentences, shown before “View role”.
+   */
+  summary: string;
+  /**
+   * About the role, what you’ll do, what we’re looking for… Use “Heading 3” for each part.
+   */
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Empty = the default set on the Careers page section.
+   */
+  applyUrl?: string | null;
+  /**
+   * Lower numbers show first.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * Send visitors (and Google) from an old link to a new one, so you keep your rankings when pages move.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1189,6 +1505,25 @@ export interface Redirect {
   from: string;
   to: string;
   type: '301' | '302';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Everything sent through the contact form, newest first. Tick “Handled” once you have replied.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-messages".
+ */
+export interface ContactMessage {
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  message?: string | null;
+  page?: string | null;
+  handled?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1262,6 +1597,14 @@ export interface PayloadLockedDocument {
         value: number | CaseStudy;
       } | null)
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'jobs';
+        value: number | Job;
+      } | null)
+    | ({
         relationTo: 'testimonials';
         value: number | Testimonial;
       } | null)
@@ -1276,6 +1619,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'redirects';
         value: number | Redirect;
+      } | null)
+    | ({
+        relationTo: 'contact-messages';
+        value: number | ContactMessage;
       } | null)
     | ({
         relationTo: 'users';
@@ -1358,6 +1705,11 @@ export interface PagesSelect<T extends boolean = true> {
         iconList?: T | IconListBlockSelect<T>;
         divider?: T | DividerBlockSelect<T>;
         caseStudyList?: T | CaseStudyListBlockSelect<T>;
+        longText?: T | LongTextBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+        contactForm?: T | ContactFormBlockSelect<T>;
+        jobList?: T | JobListBlockSelect<T>;
+        postList?: T | PostListBlockSelect<T>;
       };
   meta?:
     | T
@@ -1818,6 +2170,131 @@ export interface CaseStudyListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LongTextBlock_select".
+ */
+export interface LongTextBlockSelect<T extends boolean = true> {
+  content?: T;
+  showContents?: T;
+  contentsLabel?: T;
+  lastUpdated?: T;
+  lastUpdatedLabel?: T;
+  anchorId?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock_select".
+ */
+export interface FaqBlockSelect<T extends boolean = true> {
+  background?: T;
+  tag?: T;
+  heading?: T;
+  intro?: T;
+  button?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        newTab?: T;
+      };
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  addSchema?: T;
+  anchorId?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContactFormBlock_select".
+ */
+export interface ContactFormBlockSelect<T extends boolean = true> {
+  tag?: T;
+  heading?: T;
+  intro?: T;
+  firstNameLabel?: T;
+  lastNameLabel?: T;
+  emailLabel?: T;
+  phoneLabel?: T;
+  companyLabel?: T;
+  messageLabel?: T;
+  submitLabel?: T;
+  sendingLabel?: T;
+  consentText?: T;
+  privacyUrl?: T;
+  successHeading?: T;
+  successText?: T;
+  errorText?: T;
+  email?: T;
+  phone?: T;
+  officesHeading?: T;
+  offices?:
+    | T
+    | {
+        city?: T;
+        phone?: T;
+        address?: T;
+        id?: T;
+      };
+  anchorId?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "JobListBlock_select".
+ */
+export interface JobListBlockSelect<T extends boolean = true> {
+  tag?: T;
+  heading?: T;
+  intro?: T;
+  applyLabel?: T;
+  moreLabel?: T;
+  lessLabel?: T;
+  defaultApplyUrl?: T;
+  emptyHeading?: T;
+  emptyText?: T;
+  emptyButton?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        newTab?: T;
+      };
+  anchorId?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostListBlock_select".
+ */
+export interface PostListBlockSelect<T extends boolean = true> {
+  background?: T;
+  tag?: T;
+  heading?: T;
+  limit?: T;
+  hideWhenEmpty?: T;
+  emptyText?: T;
+  button?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        newTab?: T;
+      };
+  anchorId?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services_select".
  */
 export interface ServicesSelect<T extends boolean = true> {
@@ -1883,6 +2360,45 @@ export interface CaseStudiesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  publishedAt?: T;
+  author?: T;
+  excerpt?: T;
+  coverImage?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "jobs_select".
+ */
+export interface JobsSelect<T extends boolean = true> {
+  title?: T;
+  location?: T;
+  employmentType?: T;
+  summary?: T;
+  description?: T;
+  applyUrl?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "testimonials_select".
  */
 export interface TestimonialsSelect<T extends boolean = true> {
@@ -1912,6 +2428,7 @@ export interface TeamProfilesSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -1956,6 +2473,22 @@ export interface RedirectsSelect<T extends boolean = true> {
   from?: T;
   to?: T;
   type?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-messages_select".
+ */
+export interface ContactMessagesSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  email?: T;
+  phone?: T;
+  company?: T;
+  message?: T;
+  page?: T;
+  handled?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2404,6 +2937,30 @@ export interface CaseStudyPage {
   createdAt?: string | null;
 }
 /**
+ * Labels shared by every blog article page. The call-to-action at the bottom is copied from the Blog page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-page".
+ */
+export interface BlogPage {
+  id: number;
+  listingLabel?: string | null;
+  listingPath?: string | null;
+  tocLabel?: string | null;
+  /**
+   * {n} = minutes
+   */
+  readingTimeLabel?: string | null;
+  authorLabel?: string | null;
+  relatedHeading?: string | null;
+  /**
+   * 0 hides the section.
+   */
+  relatedCount?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
@@ -2716,6 +3273,22 @@ export interface CaseStudyPageSelect<T extends boolean = true> {
   tocLabel?: T;
   readingTimeLabel?: T;
   relatedTag?: T;
+  relatedHeading?: T;
+  relatedCount?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-page_select".
+ */
+export interface BlogPageSelect<T extends boolean = true> {
+  listingLabel?: T;
+  listingPath?: T;
+  tocLabel?: T;
+  readingTimeLabel?: T;
+  authorLabel?: T;
   relatedHeading?: T;
   relatedCount?: T;
   updatedAt?: T;

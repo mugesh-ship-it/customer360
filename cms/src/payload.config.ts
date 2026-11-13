@@ -16,12 +16,17 @@ import { TeamProfiles } from './collections/TeamProfiles'
 import { Services } from './collections/Services'
 import { CaseStudies } from './collections/CaseStudies'
 import { Products } from './collections/Products'
+import { Posts } from './collections/Posts'
+import { Jobs } from './collections/Jobs'
+import { ContactMessages } from './collections/ContactMessages'
 import { Header } from './globals/Header'
 import { Footer } from './globals/Footer'
 import { Design } from './globals/Design'
 import { CaseStudyPage } from './globals/CaseStudyPage'
 import { SiteSettings } from './globals/SiteSettings'
-import { PREVIEW_COLLECTIONS, previewDocEndpoint, previewURL } from './preview'
+import { BlogPage } from './globals/BlogPage'
+import { contactEndpoint } from './endpoints/contact'
+import { PREVIEW_COLLECTIONS, previewDocEndpoint, previewURL, type PreviewCollection } from './preview'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -52,10 +57,12 @@ export default buildConfig({
     // Drafts shown on the real site beside the editor, refreshed on every autosave.
     livePreview: {
       collections: [...PREVIEW_COLLECTIONS],
-      url: ({ data, collectionConfig, req }) =>
-        collectionConfig?.slug === 'pages' || collectionConfig?.slug === 'case-studies'
-          ? previewURL(collectionConfig.slug, data?.id, req)
-          : null,
+      url: ({ data, collectionConfig, req }) => {
+        const slug = collectionConfig?.slug
+        return slug && (PREVIEW_COLLECTIONS as readonly string[]).includes(slug)
+          ? previewURL(slug as PreviewCollection, data?.id, req)
+          : null
+      },
       breakpoints: [
         { name: 'mobile', label: 'Mobile', width: 390, height: 844 },
         { name: 'tablet', label: 'Tablet', width: 820, height: 1180 },
@@ -63,9 +70,9 @@ export default buildConfig({
       ],
     },
   },
-  endpoints: [previewDocEndpoint],
-  collections: [Pages, Services, Products, CaseStudies, Testimonials, TeamProfiles, Media, Redirects, Users],
-  globals: [Header, Footer, SiteSettings, Design, CaseStudyPage],
+  endpoints: [previewDocEndpoint, contactEndpoint],
+  collections: [Pages, Services, Products, CaseStudies, Posts, Jobs, Testimonials, TeamProfiles, Media, Redirects, ContactMessages, Users],
+  globals: [Header, Footer, SiteSettings, Design, CaseStudyPage, BlogPage],
   cors: corsOrigins,
   csrf: csrfOrigins,
   editor: lexicalEditor(),

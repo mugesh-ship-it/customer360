@@ -1,0 +1,38 @@
+---
+/** Blog article card: cover, date, headline, summary. */
+import CmsImage from '../global/CmsImage.astro';
+import { populated, postHref, type Media, type Post } from '../../lib/cms';
+
+interface Props {
+  item: Post;
+  headingLevel?: 'h2' | 'h3';
+}
+const { item: p, headingLevel: H = 'h3' } = Astro.props;
+const cover = populated<Media>(p.coverImage);
+const date = p.publishedAt ? new Date(p.publishedAt) : null;
+---
+
+<a href={postHref(p) ?? undefined} class="post-card group flex h-full flex-col overflow-hidden rounded-3xl border-2 border-white bg-page transition-colors duration-500 hover:bg-white">
+  <div class="post-card_cover relative aspect-[16/10] overflow-hidden bg-primary-50">
+    {
+      cover ? (
+        <CmsImage media={cover} class="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" sizes="(min-width: 64rem) 30vw, (min-width: 48rem) 50vw, 100vw" />
+      ) : (
+        <div class="post-card_glow absolute inset-0" aria-hidden="true" />
+      )
+    }
+  </div>
+  <div class="post-card_body flex flex-1 flex-col gap-4 p-6 lg:p-8">
+    {date && <time datetime={date.toISOString()} class="text-sm font-semibold tracking-[0.04em] text-neutral-500 uppercase">{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</time>}
+    <H class="post-card_title text-[clamp(1.25rem,0.6vw+1.05rem,1.625rem)] leading-snug font-medium tracking-[-0.03em] text-neutral-800">{p.title}</H>
+    {p.excerpt && <p class="post-card_excerpt text-size-regular line-clamp-3 text-neutral-600">{p.excerpt}</p>}
+  </div>
+</a>
+
+<style>
+  .post-card_glow {
+    background:
+      radial-gradient(60% 80% at 20% 30%, color-mix(in srgb, var(--color-primary-300) 55%, transparent), transparent),
+      radial-gradient(50% 70% at 85% 80%, color-mix(in srgb, var(--color-primary-200) 60%, transparent), transparent);
+  }
+</style>

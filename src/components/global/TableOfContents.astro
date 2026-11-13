@@ -1,0 +1,94 @@
+---
+/**
+ * "On this page" list for long text: collapsible on phones, sticky on desktop with the current
+ * heading highlighted. Used by the Long text section and blog articles.
+ */
+import chevron from '../../assets/icons/chevron.svg?raw';
+import type { TocItem } from '../../lib/richtext';
+
+interface Props {
+  items: TocItem[];
+  label?: string | null;
+}
+const { items, label } = Astro.props;
+const title = label || 'On this page';
+---
+
+{
+  items.length > 0 && (
+    <aside class="toc lg:sticky lg:top-10 lg:self-start" aria-label={title} data-toc-root>
+      <details class="toc_mobile rounded-2xl border border-neutral-300 bg-white lg:hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-semibold tracking-[0.04em] text-neutral-700 uppercase">
+          {title}
+          <span class="toc_chevron text-primary-500 transition-transform duration-300 [&_svg]:h-2 [&_svg]:w-3.5" aria-hidden="true" set:html={chevron} />
+        </summary>
+        <ol class="flex flex-col gap-1 px-5 pb-5">
+          {items.map((t) => (
+            <li class:list={[t.level === 3 && 'pl-4']}>
+              <a href={`#${t.id}`} class="block py-1.5 text-[0.9375rem] leading-snug font-medium text-neutral-600">{t.text}</a>
+            </li>
+          ))}
+        </ol>
+      </details>
+
+      <nav class="toc_desktop max-lg:hidden">
+        <p class="mb-6 text-sm font-semibold tracking-[0.04em] text-neutral-500 uppercase">{title}</p>
+        <ol class="flex flex-col gap-1 border-l-2 border-neutral-300">
+          {items.map((t) => (
+            <li>
+              <a
+                href={`#${t.id}`}
+                data-toc-link={t.id}
+                class:list={['toc_link -ml-0.5 block border-l-2 border-transparent py-2 pl-5 leading-snug tracking-[-0.02em]', t.level === 3 ? 'pl-9 text-sm' : 'text-[0.9375rem]']}
+              >
+                {t.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </aside>
+  )
+}
+
+<style>
+  .toc_mobile[open] .toc_chevron {
+    transform: rotate(180deg);
+  }
+  .toc_mobile summary::-webkit-details-marker {
+    display: none;
+  }
+  .toc_link {
+    color: var(--color-neutral-500);
+    transition:
+      color 0.3s var(--ease-out-soft),
+      border-color 0.3s var(--ease-out-soft);
+  }
+  .toc_link:hover {
+    color: var(--color-neutral-800);
+  }
+  .toc_link.is-active {
+    color: var(--color-primary-700);
+    border-color: var(--color-primary-600);
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  // Highlight the heading currently being read.
+  document.querySelectorAll<HTMLElement>('[data-toc-root]').forEach((root) => {
+    const links = [...root.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+    const headings = links.map((a) => document.getElementById(a.dataset.tocLink!)).filter((h): h is HTMLElement => Boolean(h));
+    if (!headings.length || !('IntersectionObserver' in window)) return;
+    const setActive = (id: string) => links.forEach((a) => a.classList.toggle('is-active', a.dataset.tocLink === id));
+    const io = new IntersectionObserver(
+      () => {
+        const passed = headings.filter((h) => h.getBoundingClientRect().top < window.innerHeight * 0.3);
+        setActive((passed[passed.length - 1] ?? headings[0]).id);
+      },
+      { rootMargin: '0px 0px -60% 0px', threshold: [0, 1] },
+    );
+    headings.forEach((h) => io.observe(h));
+    setActive(headings[0].id);
+  });
+</script>

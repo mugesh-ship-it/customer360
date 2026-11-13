@@ -1,0 +1,40 @@
+---
+/** "Long text" — formatted text (policies, long-form pages) with an optional "On this page" list. */
+import TableOfContents from '../global/TableOfContents.astro';
+import { renderRichText, type RichText } from '../../lib/richtext';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'longText'>;
+}
+const { block } = Astro.props;
+const { html, toc } = renderRichText(block.content as RichText);
+const showToc = block.showContents !== false && toc.length > 1;
+const updated = block.lastUpdated ? new Date(block.lastUpdated) : null;
+---
+
+<section class="section_long-text" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div
+        class:list={[
+          'long-text_component grid gap-10 pt-6 pb-20 lg:gap-16 lg:pt-10 lg:pb-32',
+          showToc ? 'lg:grid-cols-[16.5rem_minmax(0,46rem)] lg:justify-between' : 'mx-auto max-w-[46rem]',
+        ]}
+      >
+        {showToc && <TableOfContents items={toc} label={block.contentsLabel} />}
+        <div class="long-text_body" data-reveal>
+          {
+            updated && (
+              <p class="long-text_updated mb-10 text-sm font-semibold tracking-[0.04em] text-neutral-500 uppercase">
+                {block.lastUpdatedLabel || 'Last updated'}{' '}
+                <time datetime={updated.toISOString()}>{updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
+              </p>
+            )
+          }
+          <div class="rich-text" set:html={html} />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
