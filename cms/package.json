@@ -14,7 +14,8 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/seed/index.ts",
-    "seed:pages": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-pages.ts",
+    "restore:layouts": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/restore-page-layouts.ts",
+    "seed:pages":"cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-pages.ts",
     "ci": "node scripts/migrate.mjs && npm run build",
     "db:rebuild-local": "node scripts/rebuild-local-db.mjs"
   },
