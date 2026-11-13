@@ -28,6 +28,11 @@ import ProductGrid from './sections/ProductGrid.astro';
 import FeaturedTestimonial from './sections/FeaturedTestimonial.astro';
 import Benefits from './sections/Benefits.astro';
 import CaseStudyList from './sections/CaseStudyList.astro';
+import LongText from './sections/LongText.astro';
+import Faq from './sections/Faq.astro';
+import ContactForm from './sections/ContactForm.astro';
+import JobList from './sections/JobList.astro';
+import PostList from './sections/PostList.astro';
 
 interface Props {
   blocks: PageBlock[] | null | undefined;
@@ -58,6 +63,11 @@ const components: Partial<Record<PageBlock['blockType'], any>> = {
   featuredTestimonial: FeaturedTestimonial,
   benefits: Benefits,
   caseStudyList: CaseStudyList,
+  longText: LongText,
+  faq: Faq,
+  contactForm: ContactForm,
+  jobList: JobList,
+  postList: PostList,
 };
 
 const { blocks } = Astro.props;

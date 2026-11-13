@@ -1,0 +1,91 @@
+---
+/** "Open roles" — every published job (CMS → Jobs). Each opens to show its full description. */
+import Button from '../global/Button.astro';
+import SectionTag from '../global/SectionTag.astro';
+import { getJobs, type BlockOf, type Job } from '../../lib/cms';
+import { renderRichText, type RichText } from '../../lib/richtext';
+
+interface Props {
+  block: BlockOf<'jobList'>;
+}
+const { block } = Astro.props;
+const jobs = await getJobs();
+const types: Record<NonNullable<Job['employmentType']>, string> = {
+  'full-time': 'Full time',
+  'part-time': 'Part time',
+  contract: 'Contract',
+  internship: 'Internship',
+};
+const applyHref = (j: Job) => j.applyUrl || block.defaultApplyUrl || null;
+---
+
+<section class="section_jobs" id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="jobs_component py-16 lg:py-[7.5rem]">
+        <div class="jobs_header mb-10 flex max-w-[46rem] flex-col items-start gap-7 lg:mb-14" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="jobs_heading heading-style-h2 text-neutral-800">{block.heading}</h2>
+          {block.intro && <p class="jobs_intro text-size-large text-muted">{block.intro}</p>}
+        </div>
+
+        {
+          jobs.length ? (
+            <ul class="jobs_list flex flex-col gap-4">
+              {jobs.map((job, i) => {
+                const description = job.description ? renderRichText(job.description as RichText).html : '';
+                const href = applyHref(job);
+                return (
+                  <li class="jobs_item" data-reveal style={`--reveal-delay: ${Math.min(i, 4) * 60}`}>
+                    <details class="jobs_card group rounded-3xl border-2 border-white bg-white/60 transition-colors duration-500 open:bg-white hover:bg-white">
+                      <summary class="jobs_summary flex cursor-pointer list-none flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:px-12 lg:py-10">
+                        <div class="flex flex-col gap-3">
+                          <h3 class="jobs_title text-[clamp(1.375rem,0.8vw+1.1rem,1.875rem)] leading-tight font-medium tracking-[-0.03em] text-neutral-800">{job.title}</h3>
+                          <p class="jobs_text text-size-regular max-w-[44rem] text-neutral-600">{job.summary}</p>
+                          <ul class="jobs_meta flex flex-wrap gap-2 pt-1">
+                            {job.location && <li class="jobs_pill">{job.location}</li>}
+                            {job.employmentType && <li class="jobs_pill">{types[job.employmentType]}</li>}
+                          </ul>
+                        </div>
+                        <span class="jobs_toggle button flex-none self-start lg:self-center">
+                          <span class="group-open:hidden">{block.moreLabel || 'View role'}</span>
+                          <span class="hidden group-open:inline">{block.lessLabel || 'Hide role'}</span>
+                        </span>
+                      </summary>
+                      <div class="jobs_details flex flex-col gap-8 border-t border-neutral-300 px-6 pt-8 pb-8 sm:px-8 lg:px-12 lg:pb-12">
+                        {description && <div class="rich-text max-w-[46rem]" set:html={description} />}
+                        {href && <Button link={{ label: block.applyLabel || 'Apply now', url: href }} variant="icon" class="self-start" />}
+                      </div>
+                    </details>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div class="jobs_empty flex flex-col items-start gap-5 rounded-3xl bg-white p-8 lg:p-14" data-reveal>
+              <h3 class="heading-style-h3 text-neutral-800">{block.emptyHeading}</h3>
+              {block.emptyText && <p class="text-size-regular max-w-[40rem] text-neutral-600">{block.emptyText}</p>}
+              <Button link={block.emptyButton} variant="icon" />
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .jobs_summary::-webkit-details-marker {
+    display: none;
+  }
+  .jobs_pill {
+    border-radius: 999px;
+    border: 1px solid var(--color-neutral-400);
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--color-neutral-600);
+  }
+</style>

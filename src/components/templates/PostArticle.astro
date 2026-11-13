@@ -1,0 +1,118 @@
+---
+/**
+ * A blog article (used by /blog/<slug> and by the CMS draft preview). Labels come from
+ * Settings → Blog article pages; the closing call-to-action is the one on the Blog page.
+ */
+import Layout from '../../layouts/Layout.astro';
+import CmsImage from '../global/CmsImage.astro';
+import ReadingProgress from '../global/ReadingProgress.astro';
+import TableOfContents from '../global/TableOfContents.astro';
+import PostCard from '../blog/PostCard.astro';
+import Cta from '../sections/Cta.astro';
+import chevron from '../../assets/icons/chevron.svg?raw';
+import { getBlogPage, getPageBySlug, getPosts, populated, type BlockOf, type Media, type Post } from '../../lib/cms';
+import { readingMinutes, renderRichText, type RichText } from '../../lib/richtext';
+
+type Props = {
+  item: Post;
+  /** Draft preview from the CMS: no tracking, not indexed. */
+  preview?: boolean;
+};
+
+const { item, preview } = Astro.props;
+const [tpl, all] = await Promise.all([getBlogPage(), getPosts()]);
+const listingPath = tpl.listingPath || '/blog';
+const listing = await getPageBySlug(listingPath.replace(/^\/+/, '') || 'blog');
+const cta = listing?.layout?.find((b) => b.blockType === 'cta') as BlockOf<'cta'> | undefined;
+
+const { html, toc, words } = renderRichText(item.content as RichText);
+const minutes = readingMinutes(words);
+const cover = populated<Media>(item.coverImage);
+const published = item.publishedAt ? new Date(item.publishedAt) : null;
+const related = all.filter((p) => p.id !== item.id).slice(0, tpl.relatedCount ?? 3);
+---
+
+<Layout
+  light
+  preview={preview}
+  seo={{
+    title: item.title,
+    path: `/blog/${item.slug ?? ''}`,
+    meta: {
+      title: item.meta?.title,
+      description: item.meta?.description || item.excerpt,
+      image: item.meta?.image || item.coverImage,
+    },
+    seo: { pageType: 'ItemPage', breadcrumbLabel: item.title },
+  }}
+>
+  <ReadingProgress />
+
+  <article class="section_post">
+    <header class="post_header padding-global">
+      <div class="container-large">
+        <div class="post_intro mx-auto max-w-[56rem] pt-12 pb-10 text-center lg:pt-[7.5rem] lg:pb-14">
+          <nav class="post_breadcrumb mb-8 flex justify-center text-sm font-semibold tracking-[-0.02em]" aria-label="Breadcrumb" data-reveal>
+            <a href={listingPath} class="inline-flex items-center gap-2 text-primary-700 transition-colors hover:text-primary-900">
+              <span class="rotate-90 [&_svg]:h-2 [&_svg]:w-3.5" aria-hidden="true" set:html={chevron} />
+              {tpl.listingLabel || 'Blog'}
+            </a>
+          </nav>
+          <h1 class="post_title heading-style-h1 text-neutral-800 lg:leading-[1.2]" data-reveal>{item.title}</h1>
+          {item.excerpt && <p class="post_excerpt text-size-large mx-auto mt-6 max-w-[44rem] text-neutral-700 lg:mt-8" data-reveal style="--reveal-delay: 100">{item.excerpt}</p>}
+          <p class="post_meta mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-semibold tracking-[0.04em] text-neutral-500 uppercase" data-reveal style="--reveal-delay: 150">
+            {item.author && <span>{tpl.authorLabel || 'By'} {item.author}</span>}
+            {item.author && published && <span aria-hidden="true">·</span>}
+            {published && <time datetime={published.toISOString()}>{published.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</time>}
+            <span aria-hidden="true">·</span>
+            <span class="text-primary-700">{(tpl.readingTimeLabel || '{n} min read').replace('{n}', String(minutes))}</span>
+          </p>
+        </div>
+      </div>
+    </header>
+
+    {
+      cover && (
+        <div class="padding-global">
+          <div class="container-large">
+            <figure class="post_cover aspect-[16/9] overflow-hidden rounded-3xl bg-primary-50 lg:aspect-[16/7]" data-reveal>
+              <CmsImage media={cover} class="size-full object-cover" loading="eager" fetchpriority="high" sizes="(min-width: 80rem) 1280px, 100vw" />
+            </figure>
+          </div>
+        </div>
+      )
+    }
+
+    <div class="padding-global">
+      <div class="container-large">
+        <div
+          class:list={[
+            'post_body grid gap-10 pt-14 pb-20 lg:gap-16 lg:pt-20 lg:pb-28',
+            toc.length > 1 ? 'lg:grid-cols-[16.5rem_minmax(0,46rem)] lg:justify-between' : 'mx-auto max-w-[46rem]',
+          ]}
+        >
+          {toc.length > 1 && <TableOfContents items={toc} label={tpl.tocLabel} />}
+          <div class="rich-text" set:html={html} />
+        </div>
+      </div>
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="section_post-related padding-global pb-20 lg:pb-28">
+        <div class="container-large">
+          <h2 class="heading-style-h2 mb-10 text-neutral-800 lg:mb-14" data-reveal>{tpl.relatedHeading}</h2>
+          <ul class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8" data-reveal>
+            {related.map((p) => (
+              <li>
+                <PostCard item={p} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+  {cta && <Cta block={cta} />}
+</Layout>

@@ -22,6 +22,11 @@ import { IconCardsBlock } from './IconCards'
 import { IconListBlock } from './IconList'
 import { DividerBlock } from './Divider'
 import { CaseStudyListBlock } from './CaseStudyList'
+import { LongTextBlock } from './LongText'
+import { FaqBlock } from './Faq'
+import { ContactFormBlock } from './ContactForm'
+import { JobListBlock } from './JobList'
+import { PostListBlock } from './PostList'
 
 /** Every section editors can add to any page. Add new blocks here. */
 export const pageBlocks = [
@@ -49,4 +54,9 @@ export const pageBlocks = [
   IconListBlock,
   DividerBlock,
   CaseStudyListBlock,
+  LongTextBlock,
+  FaqBlock,
+  ContactFormBlock,
+  JobListBlock,
+  PostListBlock,
 ]

@@ -1,0 +1,123 @@
+---
+/**
+ * "Questions & answers" — title on the left, questions that open on the right. Native <details>,
+ * so it works without JavaScript; a small script animates the height. Optional FAQPage data for Google.
+ */
+import Button from '../global/Button.astro';
+import SectionTag from '../global/SectionTag.astro';
+import { sectionBg } from '../../lib/sections';
+import type { BlockOf } from '../../lib/cms';
+
+interface Props {
+  block: BlockOf<'faq'>;
+}
+const { block } = Astro.props;
+const items = block.items ?? [];
+const paragraphs = (text: string) => text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+const schema =
+  block.addSchema !== false && items.length
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: items.map((i) => ({ '@type': 'Question', name: i.question, acceptedAnswer: { '@type': 'Answer', text: i.answer } })),
+      }).replace(/</g, '\\u003c')
+    : null;
+---
+
+<section class:list={['section_faq', sectionBg(block.background)]} id={block.anchorId || undefined}>
+  <div class="padding-global">
+    <div class="container-large">
+      <div class="faq_component grid gap-10 py-16 lg:grid-cols-[minmax(0,26rem)_minmax(0,46rem)] lg:justify-between lg:gap-16 lg:py-[7.5rem]">
+        <div class="faq_header flex flex-col items-start gap-7 lg:sticky lg:top-10 lg:self-start" data-reveal>
+          <SectionTag text={block.tag} />
+          <h2 class="faq_heading heading-style-h2 text-neutral-800">{block.heading}</h2>
+          {block.intro && <p class="faq_intro text-size-large text-muted">{block.intro}</p>}
+          <Button link={block.button} variant="icon" />
+        </div>
+
+        <div class="faq_list border-t border-neutral-300" data-reveal style="--reveal-delay: 100">
+          {
+            items.map((item) => (
+              <details class="faq_item border-b border-neutral-300" data-faq-item>
+                <summary class="faq_question flex cursor-pointer list-none items-center justify-between gap-6 py-6 text-left text-[clamp(1.125rem,0.4vw+1rem,1.375rem)] leading-snug font-medium tracking-[-0.03em] text-neutral-800 lg:py-7">
+                  <span>{item.question}</span>
+                  <span class="faq_icon relative size-9 flex-none rounded-full border border-primary-500 text-primary-600" aria-hidden="true" />
+                </summary>
+                <div class="faq_answer overflow-hidden">
+                  <div class="flex flex-col gap-4 pr-12 pb-7 text-size-regular leading-relaxed text-neutral-700">
+                    {paragraphs(item.answer).map((p) => <p>{p}</p>)}
+                  </div>
+                </div>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  {schema && <script type="application/ld+json" is:inline set:html={schema} />}
+</section>
+
+<style>
+  .faq_question::-webkit-details-marker {
+    display: none;
+  }
+  /* Plus that turns into a minus. */
+  .faq_icon::before,
+  .faq_icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.875rem;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    translate: -50% -50%;
+    transition: rotate 0.35s var(--ease-out-soft);
+  }
+  .faq_icon::after {
+    rotate: 90deg;
+  }
+  .faq_item[open] .faq_icon::after {
+    rotate: 0deg;
+  }
+  .faq_item[open] .faq_icon {
+    background: var(--color-primary-600);
+    border-color: var(--color-primary-600);
+    color: var(--color-primary-25);
+  }
+  .faq_icon {
+    transition:
+      background-color 0.35s var(--ease-out-soft),
+      color 0.35s var(--ease-out-soft);
+  }
+  .faq_question:hover {
+    color: var(--color-primary-700);
+  }
+</style>
+
+<script>
+  import { reduceMotion } from '../../lib/scroll';
+
+  // Smooth open/close; <details> still works on its own without this.
+  if (!reduceMotion) {
+    document.querySelectorAll<HTMLDetailsElement>('[data-faq-item]').forEach((item) => {
+      const summary = item.querySelector('summary')!;
+      const answer = item.querySelector<HTMLElement>('.faq_answer')!;
+      summary.addEventListener('click', (e) => {
+        e.preventDefault();
+        const opening = !item.open;
+        if (opening) item.open = true;
+        const full = answer.scrollHeight;
+        const anim = answer.animate(
+          opening ? [{ height: '0px', opacity: 0 }, { height: `${full}px`, opacity: 1 }] : [{ height: `${full}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
+          { duration: 350, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        );
+        anim.onfinish = () => {
+          if (!opening) item.open = false;
+        };
+      });
+    });
+  }
+</script>

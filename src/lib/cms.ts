@@ -2,9 +2,9 @@
  * Thin Payload REST client. All site content is fetched from the CMS at build
  * time (and on every request in `astro dev`, so edits show up on refresh).
  */
-import type { Page, Header, Footer, Media, Testimonial, Design, SiteSetting, Redirect, TeamProfile, Service, CaseStudy, Product, CaseStudyPage } from '../../cms/src/payload-types';
+import type { Page, Header, Footer, Media, Testimonial, Design, SiteSetting, Redirect, TeamProfile, Service, CaseStudy, Product, CaseStudyPage, Post, Job, BlogPage } from '../../cms/src/payload-types';
 
-export type { Page, Header, Footer, Media, Testimonial, Design, SiteSetting, Redirect, TeamProfile, Service, CaseStudy, Product, CaseStudyPage };
+export type { Page, Header, Footer, Media, Testimonial, Design, SiteSetting, Redirect, TeamProfile, Service, CaseStudy, Product, CaseStudyPage, Post, Job, BlogPage };
 export type PageBlock = NonNullable<Page['layout']>[number];
 export type BlockOf<T extends PageBlock['blockType']> = Extract<PageBlock, { blockType: T }>;
 export type LinkValue = { label?: string | null; url?: string | null; newTab?: boolean | null } | null | undefined;
@@ -73,6 +73,20 @@ export const getFooter = once(() => request<Footer>('/globals/footer?depth=1'));
 export const getDesign = once(() => request<Design>('/globals/design?depth=0'));
 export const getSiteSettings = once(() => request<SiteSetting>('/globals/site-settings?depth=1'));
 export const getCaseStudyPage = once(() => request<CaseStudyPage>('/globals/case-study-page?depth=0'));
+export const getBlogPage = once(() => request<BlogPage>('/globals/blog-page?depth=0'));
+
+/** Every published blog article, newest first (cards + their own pages). Read once per build. */
+export const getPosts = once(async () => {
+  const data = await request<{ docs: Post[] }>('/posts?limit=500&depth=1&sort=-publishedAt');
+  return data.docs;
+});
+export const postHref = (p: Pick<Post, 'slug'>) => (p.slug ? `/blog/${p.slug}` : null);
+
+/** Published jobs for the Careers page, in the editors' order. */
+export const getJobs = once(async () => {
+  const data = await request<{ docs: Job[] }>('/jobs?limit=200&depth=0&sort=order');
+  return data.docs;
+});
 
 /** Every case study, newest first (cards + their own pages). Read once per build. */
 export const getCaseStudies = once(async () => {
@@ -122,13 +136,13 @@ export function linkAttrs(link: LinkValue) {
 }
 
 /** Collections the CMS can preview as drafts (see cms/src/preview.ts). */
-export type PreviewCollection = 'pages' | 'case-studies';
+export type PreviewCollection = 'pages' | 'case-studies' | 'posts';
 
 /**
  * Latest draft of a document, for the on-demand preview route. The CMS checks the signed
  * `exp`/`sig` it generated for the editor; this site holds no secret of its own.
  */
-export async function getPreviewDoc<T extends Page | CaseStudy>(
+export async function getPreviewDoc<T extends Page | CaseStudy | Post>(
   collection: PreviewCollection,
   id: string,
   exp: string,
