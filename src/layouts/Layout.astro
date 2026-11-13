@@ -4,7 +4,7 @@ import Navbar from '../components/global/Navbar.astro';
 import Footer from '../components/global/Footer.astro';
 import Seo from '../components/global/Seo.astro';
 import Tracking from '../components/global/Tracking.astro';
-import { CMS_URL, getHeader, getFooter, getDesign, getSiteSettings, pagePath, type Page } from '../lib/cms';
+import { CMS_URL, getHeader, getFooter, getDesign, getSiteSettings, getPageSummaries, pagePath, type Page } from '../lib/cms';
 import { designCss, googleFontsUrl } from '../lib/design';
 import { buildSeo, type SeoInput } from '../lib/seo';
 
@@ -17,7 +17,7 @@ type Props = ({ page: Page; seo?: never } | { page?: never; seo: SeoInput }) & {
 };
 
 const props = Astro.props;
-const [header, footer, design, settings] = await Promise.all([getHeader(), getFooter(), getDesign(), getSiteSettings()]);
+const [header, footer, design, settings, menuPages] = await Promise.all([getHeader(), getFooter(), getDesign(), getSiteSettings(), getPageSummaries()]);
 
 const input: SeoInput = props.page
   ? { title: props.page.title, path: pagePath(props.page.slug), meta: props.page.meta, seo: props.page.seo }
@@ -57,7 +57,7 @@ const fontsUrl = googleFontsUrl(design);
   <body class:list={[(props.page?.pageBackground === 'light' || props.light) && 'is-light']}>
     {!props.preview && <Tracking settings={settings} position="body" />}
     <div class="page-wrapper">
-      <Navbar header={header} />
+      <Navbar header={header} pages={menuPages} />
       <main class="main-wrapper">
         <slot />
       </main>
