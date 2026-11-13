@@ -12,6 +12,11 @@ type ScrollCallback = (scrollY: number) => void;
 export const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const snap = (v: number) => {
+  const dpr = window.devicePixelRatio || 1;
+  return Math.round(v * dpr) / dpr;
+};
+
 let lenis: Lenis | null = null;
 const callbacks = new Set<ScrollCallback>();
 
@@ -25,7 +30,13 @@ export function initScroll() {
     touchMultiplier: 1,
     anchors: { offset: -24 },
   });
-  lenis.on('scroll', ({ scroll }: { scroll: number }) => callbacks.forEach((cb) => cb(scroll)));
+  // Lenis's `scroll` is fractional, but the browser snaps the real scroll position to device
+  // pixels. Feeding the fractional value to scroll-linked transforms makes them drift against the
+  // page by up to a pixel every frame — which reads as text shaking. Snap to device pixels.
+  lenis.on('scroll', ({ scroll }: { scroll: number }) => {
+    const y = snap(scroll);
+    callbacks.forEach((cb) => cb(y));
+  });
   return lenis;
 }
 
@@ -46,7 +57,7 @@ export function onScroll(cb: ScrollCallback): () => void {
     };
     window.addEventListener('scroll', native, { passive: true });
   }
-  cb(lenis ? lenis.scroll : window.scrollY);
+  cb(lenis ? snap(lenis.scroll) : window.scrollY);
   return () => {
     callbacks.delete(cb);
     if (native) window.removeEventListener('scroll', native);
