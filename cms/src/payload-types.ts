@@ -311,7 +311,6 @@ export interface Media {
    * Helps visually impaired visitors and Google. Leave empty only for purely decorative images.
    */
   alt?: string | null;
-  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -2428,7 +2427,6 @@ export interface TeamProfilesSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
-  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

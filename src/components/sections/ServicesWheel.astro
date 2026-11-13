@@ -134,7 +134,7 @@ const slices = services.map((service, i) => {
   const a0 = SLOT_STARTS[i];
   const mid = a0 + SLOT_DEG / 2;
   const r = radii[i];
-  const [lx, ly] = pt(mid, R_IN + (r - R_IN) * 0.6);
+  const [lx, ly] = pt(mid, R_IN + (r - R_IN) * 0.68);
   const [dx, dy] = pt(mid, LIFT);
   return {
     service,
@@ -376,10 +376,10 @@ const hubSize = { w: f(((R_HUB * 2) / vb.w) * 100) };
     transform: translateZ(1px);
     margin: 0;
     width: max-content;
-    max-width: 7em;
+    max-width: 6.5em;
     text-wrap: balance;
     text-align: center;
-    font-size: max(0.625rem, 2.3cqi);
+    font-size: max(0.625rem, 2cqi);
     line-height: 1.2;
     font-weight: 600;
     letter-spacing: -0.02em;
