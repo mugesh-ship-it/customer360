@@ -44,9 +44,29 @@ console.log(APPLY ? 'MODE: APPLY (writing)\n' : 'MODE: dry run (nothing is writt
 const exported: { slug: string; layout: Json[] }[] = JSON.parse(fs.readFileSync(FILE, 'utf8'))
 const payload = await getPayload({ config })
 
+/**
+ * Files that exist in production under a different name (same image, verified by byte size).
+ * Local avatar-1..4.jpg were uploaded to production as avatar-8..5.jpg.
+ */
+const ALIASES: Record<string, string> = {
+  'avatar-1.jpg': 'avatar-8.jpg',
+  'avatar-2.jpg': 'avatar-7.jpg',
+  'avatar-3.jpg': 'avatar-6.jpg',
+  'avatar-4.jpg': 'avatar-5.jpg',
+}
+
 const mediaCache = new Map<string, number | null>()
-const mediaIdByFilename = async (filename: string) => {
+const mediaIdByFilename = async (filename: string, filesize?: number) => {
   if (mediaCache.has(filename)) return mediaCache.get(filename)!
+  const alias = ALIASES[filename]
+  if (alias) {
+    const a = await payload.find({ collection: 'media', where: { filename: { equals: alias } }, limit: 1, depth: 0 })
+    const doc = a.docs[0]
+    if (doc && (filesize == null || doc.filesize === filesize)) {
+      mediaCache.set(filename, doc.id as number)
+      return doc.id as number
+    }
+  }
   // Exact filename first. Uploads re-created in production may have gained a numeric suffix
   // ("logo-sap.svg" -> "logo-sap-1.svg"), so fall back to that, lowest suffix first.
   const dot = filename.lastIndexOf('.')
@@ -79,7 +99,7 @@ const remap = async (node: Json, problems: string[]): Promise<Json> => {
     // A populated related document (has timestamps) → its id.
     if ('createdAt' in node && 'updatedAt' in node && 'id' in node) {
       if (node.filename && node.mimeType) {
-        const id = await mediaIdByFilename(node.filename)
+        const id = await mediaIdByFilename(node.filename, node.filesize)
         if (id == null) problems.push(`media not found in target: ${node.filename}`)
         return id
       }
