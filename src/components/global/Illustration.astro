@@ -246,10 +246,10 @@ const label = decorative ? undefined : doc?.alt || undefined;
 
     /* ---------- Idle (only while on screen) ---------- */
     .ill.is-in.is-live .ill_float {
-      animation: ill-float 5.6s ease-in-out infinite;
+      animation: ill-float 4s ease-in-out infinite;
     }
     .ill.is-in.is-live .ill_shadow {
-      animation: ill-shadow 5.6s ease-in-out infinite;
+      animation: ill-shadow 4s ease-in-out infinite;
     }
     .ill.is-in.is-live .ill_accent {
       animation: ill-twinkle var(--tw-dur) ease-in-out var(--tw-delay) infinite;
@@ -277,9 +277,11 @@ const label = decorative ? undefined : doc?.alt || undefined;
     0%,
     100% {
       translate: 0 0;
+      rotate: 0deg;
     }
     50% {
-      translate: 0 var(--ill-lift, -10px);
+      translate: 0 var(--ill-lift, -18px);
+      rotate: 1.2deg;
     }
   }
   @keyframes ill-shadow {
@@ -303,6 +305,16 @@ const label = decorative ? undefined : doc?.alt || undefined;
     }
     60% {
       opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ill.is-live .ill_float {
+      animation: ill-float 7s ease-in-out infinite;
+      --ill-lift: -6px;
+    }
+    .ill.is-live .ill_accent {
+      animation: ill-twinkle var(--tw-dur) ease-in-out var(--tw-delay) infinite;
     }
   }
 </style>
