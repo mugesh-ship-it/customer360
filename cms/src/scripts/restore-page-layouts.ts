@@ -47,8 +47,19 @@ const payload = await getPayload({ config })
 const mediaCache = new Map<string, number | null>()
 const mediaIdByFilename = async (filename: string) => {
   if (mediaCache.has(filename)) return mediaCache.get(filename)!
-  const r = await payload.find({ collection: 'media', where: { filename: { equals: filename } }, limit: 1, depth: 0 })
-  const id = (r.docs[0]?.id as number | undefined) ?? null
+  // Exact filename first. Uploads re-created in production may have gained a numeric suffix
+  // ("logo-sap.svg" -> "logo-sap-1.svg"), so fall back to that, lowest suffix first.
+  const dot = filename.lastIndexOf('.')
+  const base = dot > 0 ? filename.slice(0, dot) : filename
+  const ext = dot > 0 ? filename.slice(dot) : ''
+  const r = await payload.find({ collection: 'media', where: { filename: { like: base } }, limit: 50, depth: 0 })
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`^${escape(base)}(-\\d+)?${escape(ext)}$`)
+  const candidates = r.docs
+    .filter((d) => pattern.test(String(d.filename)))
+    .sort((a, b) => (a.filename === filename ? -1 : b.filename === filename ? 1 : String(a.filename).localeCompare(String(b.filename), undefined, { numeric: true })))
+  if (candidates.length > 1) console.log(`  note: ${filename} matches ${candidates.length} files in target, using ${candidates[0].filename}`)
+  const id = (candidates[0]?.id as number | undefined) ?? null
   mediaCache.set(filename, id)
   return id
 }
